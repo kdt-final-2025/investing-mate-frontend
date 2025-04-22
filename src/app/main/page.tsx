@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { Spotlight } from '@/components/ui/spotlight'
 
-const TradingViewWidget = dynamic(() => import('@/components/TradingViewWidget'), {
+const TradingViewWidget = dynamic(() => import('@/components/ui/TradingViewWidget'), {
   ssr: false,
 })
 

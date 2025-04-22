@@ -75,7 +75,7 @@ export function Spotlight({
         height: size,
         left: spotlightLeft,
         top: spotlightTop,
-        background: `radial-gradient(circle at center, ${fill} 0%, rgba(255, 255, 255, 0.8) 25%, transparent 70%)`,
+        background: `radial-gradient(circle at center, ${fill} 0%, rgba(245, 3, 3, 0.8) 25%, transparent 70%)`,
         filter: 'blur(15px)',
       }}
     />
