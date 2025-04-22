@@ -10,6 +10,14 @@ const TradingViewWidget = dynamic(() => import('@/components/ui/TradingViewWidge
   ssr: false,
 })
 
+// 심볼 표시를 위한 매핑
+const SYMBOL_DISPLAY: { [key: string]: string } = {
+  '^KS11': 'K',
+  '^KQ11': 'Q',
+  'KRW=X': 'K',
+  'BTC-KRW': 'B'
+};
+
 function formatNumber(num: number): string {
   return new Intl.NumberFormat('ko-KR', {
     minimumFractionDigits: 2,
@@ -32,11 +40,11 @@ function formatCurrency(num: number, symbol: string): string {
 }
 
 function formatChangePercent(num: number): string {
-  const formatted = new Intl.NumberFormat('ko-KR', {
+  if (isNaN(num) || num === 0) return '0.00'
+  return new Intl.NumberFormat('ko-KR', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(Math.abs(num))
-  return num >= 0 ? `+${formatted}` : `-${formatted}`
 }
 
 function formatPrice(num: number, symbol: string): string {
@@ -59,6 +67,7 @@ function formatPrice(num: number, symbol: string): string {
 
 export default function Page() {
   const { data: marketData, isLoading, error } = useMarketData()
+  const [selectedTimeframe, setSelectedTimeframe] = useState('1m')
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-screen">Loading...</div>
@@ -74,80 +83,146 @@ export default function Page() {
       <nav className="bg-[#1E222D] border-b border-[#363A45]">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
+            <div className="flex items-center space-x-8">
               <Link href="/" className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center">
                   <span className="text-white font-bold">R</span>
                 </div>
                 <span className="text-xl font-bold text-white">Red Light</span>
               </Link>
+              <div className="flex space-x-6">
+                <Link href="/class" className="text-gray-300 hover:text-white">더 클래스</Link>
+                <Link href="/market" className="text-gray-300 hover:text-white">관심종목</Link>
+                <Link href="/portfolio" className="text-gray-300 hover:text-white">포트폴리오</Link>
+                <Link href="/realtime" className="text-gray-300 hover:text-white">실시간</Link>
+                <Link href="/community" className="text-gray-300 hover:text-white">커뮤니티</Link>
+              </div>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-400">
-                {new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}
-              </span>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="주식, 가상자산 검색"
+                  className="bg-[#2A2E39] text-white px-4 py-2 rounded-lg w-64 focus:outline-none"
+                />
+                <span className="absolute right-3 top-2.5 text-gray-400">🔍</span>
+              </div>
+              <button className="px-4 py-2 bg-[#2A2E39] rounded-lg hover:bg-[#363B47]">
+                KOR | ENG
+              </button>
             </div>
           </div>
         </div>
       </nav>
 
       <div className="container mx-auto p-4">
-        {/* 헤더 영역 */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-2">
-            <span className="text-yellow-500">🔔</span>
-            <span className="text-sm text-gray-400">마지막 업데이트: {new Date().toLocaleString()}</span>
-          </div>
+        {/* 알림 영역 */}
+        <div className="flex items-center space-x-2 mb-6">
+          <span className="text-yellow-500">🔔</span>
+          <span className="text-sm text-gray-400">마이데이터 갱신 오류 안내</span>
+          <span className="text-gray-400">{new Date().toLocaleDateString()}</span>
         </div>
 
-        {/* 차트 영역 */}
-        <div className="bg-[#1E222D] rounded-lg p-4 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-4">
-              <h2 className="text-xl font-bold">SPY</h2>
-              <div className="px-2 py-1 bg-[#2A2E39] rounded text-sm">1D</div>
-            </div>
-            <div className="flex space-x-2">
-              <button className="px-3 py-1 bg-[#2A2E39] rounded hover:bg-[#363B47] transition-colors">
-                지표
-              </button>
-              <button className="px-3 py-1 bg-[#2A2E39] rounded hover:bg-[#363B47] transition-colors">
-                전체화면
-              </button>
-            </div>
-          </div>
-          <div className="h-[400px]">
-            <TradingViewWidget />
-          </div>
-        </div>
-
-        {/* 시장 데이터 영역 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {marketData.map((data) => (
-            <div
-              key={data.symbol}
-              className="relative bg-[#1E222D] p-4 rounded-lg overflow-hidden group hover:shadow-lg transition-all duration-300"
-            >
-              <Spotlight
-                className="-top-40 -left-20 md:-top-40 md:-left-20"
-                fill="rgb(255, 255, 255)"
-              />
-              <div className="relative z-10 backdrop-blur-sm">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-medium">{data.name || data.symbol}</h3>
-                  <span className={`text-sm ${data.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                    {data.change >= 0 ? '▲' : '▼'}
-                  </span>
+        {/* 차트와 주요 종목 비교 영역 */}
+        <div className="flex flex-col lg:flex-row gap-4 mb-6">
+          {/* 차트 영역 */}
+          <div className="bg-[#1E222D] rounded-lg p-4 lg:w-[65%]">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <span className="text-xl font-bold">SPY</span>
+                  <span className="text-gray-400">1D</span>
                 </div>
-                <div className="text-2xl font-bold mb-1">
-                  {formatPrice(data.price, data.symbol)}
-                </div>
-                <div className={`text-sm ${data.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {formatChangePercent(data.changePercent)}%
+                <div className="flex space-x-2">
+                  {['1m', '30m', '1h', '1D'].map((timeframe) => (
+                    <button
+                      key={timeframe}
+                      className={`px-3 py-1 rounded ${
+                        selectedTimeframe === timeframe
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-[#2A2E39] text-gray-400 hover:bg-[#363B47]'
+                      }`}
+                      onClick={() => setSelectedTimeframe(timeframe)}
+                    >
+                      {timeframe}
+                    </button>
+                  ))}
                 </div>
               </div>
+              <div className="flex space-x-2">
+                <button className="p-2 bg-[#2A2E39] rounded hover:bg-[#363B47]">
+                  <span className="text-lg">📊</span>
+                </button>
+                <button className="p-2 bg-[#2A2E39] rounded hover:bg-[#363B47]">
+                  <span className="text-lg">📈</span>
+                </button>
+                <button className="p-2 bg-[#2A2E39] rounded hover:bg-[#363B47]">
+                  <span className="text-lg">🔍</span>
+                </button>
+              </div>
             </div>
-          ))}
+            <div className="h-[350px]">
+              <TradingViewWidget />
+            </div>
+          </div>
+
+          {/* 주요 종목 비교 */}
+          <div className="bg-[#1E222D] rounded-lg p-4 lg:w-[35%]">
+            <h2 className="text-xl font-bold mb-4">주요 종목 비교하기</h2>
+            <div className="grid grid-cols-1 gap-4 max-h-[350px] overflow-y-auto">
+              {marketData.map((data) => (
+                <div
+                  key={data.symbol}
+                  className="relative bg-[#2A2E39] p-3 rounded-lg overflow-hidden group hover:shadow-lg transition-all duration-300"
+                >
+                  <div className="relative z-10">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
+                          {SYMBOL_DISPLAY[data.symbol] || data.symbol.charAt(0)}
+                        </div>
+                        <div>
+                          <h3 className="font-medium">{data.name || data.symbol}</h3>
+                          <span className="text-sm text-gray-400">{data.symbol}</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-bold">
+                          {formatPrice(data.price, data.symbol)}
+                        </div>
+                        <div className={`text-sm ${data.change > 0 ? 'text-green-500' : data.change < 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                          {data.change === 0 ? '-' : data.change > 0 ? '▲' : '▼'} {formatChangePercent(Math.abs(data.changePercent))}%
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* 뉴스 섹션 */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold">오늘의 뉴스</h2>
+            <div className="flex space-x-2">
+              <button className="px-3 py-1 bg-[#2A2E39] rounded text-sm hover:bg-[#363B47]">
+                보유 종목
+              </button>
+              <button className="px-3 py-1 bg-[#2A2E39] rounded text-sm hover:bg-[#363B47]">
+                오늘의 Pick
+              </button>
+              <button className="px-3 py-1 bg-[#2A2E39] rounded text-sm hover:bg-[#363B47]">
+                추천 뉴스
+              </button>
+            </div>
+          </div>
+          <div className="bg-[#1E222D] rounded-lg p-4">
+            <div className="text-center text-gray-400">
+              관련 뉴스가 없습니다.
+            </div>
+          </div>
         </div>
       </div>
     </main>

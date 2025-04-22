@@ -8,16 +8,17 @@ export interface MarketData {
   name?: string;
 }
 
+interface YahooFinanceQuote {
+  regularMarketPrice: number;
+  regularMarketPreviousClose: number;
+  regularMarketChange: number;
+  regularMarketChangePercent: number;
+  symbol: string;
+}
+
 interface YahooFinanceResponse {
-  chart: {
-    result: Array<{
-      meta: {
-        symbol: string;
-        regularMarketPrice: number;
-        regularMarketChange: number;
-        regularMarketChangePercent: number;
-      };
-    }>;
+  quoteResponse: {
+    result: YahooFinanceQuote[];
     error: string | null;
   };
 }
@@ -34,36 +35,94 @@ export async function GET() {
   try {
     const marketData = await Promise.all(
       SYMBOLS.map(async (symbol) => {
-        const response = await fetch(
-          `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`
-        );
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch data for ${symbol}`);
-        }
+        try {
+          console.log(`Fetching data for ${symbol}...`);
+          
+          const response = await fetch(
+            `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1m&range=1d&includePrePost=false`,
+            {
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+              },
+              next: { revalidate: 0 } // 캐시 비활성화
+            }
+          );
+          
+          if (!response.ok) {
+            console.error(`Failed to fetch data for ${symbol}: ${response.status} ${response.statusText}`);
+            throw new Error(`Failed to fetch data for ${symbol}`);
+          }
 
-        const data: YahooFinanceResponse = await response.json();
-        
-        if (data.chart.error) {
-          throw new Error(`Yahoo Finance API error: ${data.chart.error}`);
-        }
+          const data: YahooFinanceResponse = await response.json();
+          
+          if (data.chart.error) {
+            console.error(`Yahoo Finance API error for ${symbol}: ${data.chart.error}`);
+            throw new Error(`Yahoo Finance API error: ${data.chart.error}`);
+          }
 
-        const result = data.chart.result[0];
-        return {
-          symbol,
-          name: MARKET_NAMES[symbol],
-          price: result.meta.regularMarketPrice,
-          change: result.meta.regularMarketChange,
-          changePercent: result.meta.regularMarketChangePercent,
-        };
+          if (!data.chart.result || data.chart.result.length === 0) {
+            console.error(`No data returned for ${symbol}`);
+            throw new Error(`No data returned for ${symbol}`);
+          }
+
+          const result = data.chart.result[0];
+          const meta = result.meta;
+          
+          // 현재가와 전일종가 사용
+          const currentPrice = meta.regularMarketPrice;
+          const previousClose = meta.regularMarketPreviousClose;
+          
+          // 변화량과 등락률 계산
+          const change = currentPrice - previousClose;
+          const changePercent = (change / previousClose) * 100;
+
+          console.log(`[${symbol}] Data check:`, {
+            currentPrice,
+            previousClose,
+            change,
+            changePercent,
+            rawMeta: {
+              regularMarketPrice: meta.regularMarketPrice,
+              regularMarketPreviousClose: meta.regularMarketPreviousClose,
+              regularMarketTime: new Date(meta.regularMarketTime * 1000).toLocaleString(),
+              regularMarketOpen: meta.regularMarketOpen,
+              regularMarketDayHigh: meta.regularMarketDayHigh,
+              regularMarketDayLow: meta.regularMarketDayLow,
+            }
+          });
+
+          const marketData = {
+            symbol,
+            name: MARKET_NAMES[symbol],
+            price: currentPrice,
+            change: Number(change.toFixed(2)),
+            changePercent: Number(changePercent.toFixed(2)),
+          };
+
+          console.log(`[${symbol}] Final processed data:`, marketData);
+          return marketData;
+        } catch (error) {
+          console.error(`Error fetching data for ${symbol}:`, error);
+          return {
+            symbol,
+            name: MARKET_NAMES[symbol],
+            price: 0,
+            change: 0,
+            changePercent: 0,
+          };
+        }
       })
     );
 
-    if (!marketData.length) {
-      throw new Error('Failed to fetch any market data');
+    // Filter out any failed requests
+    const validMarketData = marketData.filter(data => data.price !== 0);
+
+    if (validMarketData.length === 0) {
+      throw new Error('Failed to fetch any valid market data');
     }
 
-    return NextResponse.json(marketData);
+    console.log('All market data:', validMarketData);
+    return NextResponse.json(validMarketData);
   } catch (error) {
     console.error('Error in market data API:', error);
     return NextResponse.json(
