@@ -14,7 +14,7 @@ const TradingViewWidget = dynamic(() => import('@/components/ui/TradingViewWidge
 const SYMBOL_DISPLAY: { [key: string]: string } = {
   '^KS11': 'K',
   '^KQ11': 'Q',
-  'KRW=X': 'K',
+  'KRW=X': 'U',
   'BTC-KRW': 'B'
 };
 
@@ -90,12 +90,12 @@ export default function Page() {
                 </div>
                 <span className="text-xl font-bold text-white">Red Light</span>
               </Link>
-              <div className="flex space-x-6">
-                <Link href="/class" className="text-gray-300 hover:text-white">더 클래스</Link>
-                <Link href="/market" className="text-gray-300 hover:text-white">관심종목</Link>
-                <Link href="/portfolio" className="text-gray-300 hover:text-white">포트폴리오</Link>
-                <Link href="/realtime" className="text-gray-300 hover:text-white">실시간</Link>
-                <Link href="/community" className="text-gray-300 hover:text-white">커뮤니티</Link>
+              <div className="flex space-x-6 max-md:hidden">
+                <Link href="/class" className="text-gray-300 hover:text-white text-xs">더 클래스</Link>
+                <Link href="/market" className="text-gray-300 hover:text-white text-xs">관심종목</Link>
+                <Link href="/portfolio" className="text-gray-300 hover:text-white text-xs">포트폴리오</Link>
+                <Link href="/realtime" className="text-gray-300 hover:text-white text-xs">실시간</Link>
+                <Link href="/community" className="text-gray-300 hover:text-white text-xs">커뮤니티</Link>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -107,9 +107,6 @@ export default function Page() {
                 />
                 <span className="absolute right-3 top-2.5 text-gray-400">🔍</span>
               </div>
-              <button className="px-4 py-2 bg-[#2A2E39] rounded-lg hover:bg-[#363B47]">
-                KOR | ENG
-              </button>
             </div>
           </div>
         </div>
@@ -130,35 +127,9 @@ export default function Page() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
-                  <span className="text-xl font-bold">SPY</span>
-                  <span className="text-gray-400">1D</span>
-                </div>
-                <div className="flex space-x-2">
-                  {['1m', '30m', '1h', '1D'].map((timeframe) => (
-                    <button
-                      key={timeframe}
-                      className={`px-3 py-1 rounded ${
-                        selectedTimeframe === timeframe
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-[#2A2E39] text-gray-400 hover:bg-[#363B47]'
-                      }`}
-                      onClick={() => setSelectedTimeframe(timeframe)}
-                    >
-                      {timeframe}
-                    </button>
-                  ))}
                 </div>
               </div>
               <div className="flex space-x-2">
-                <button className="p-2 bg-[#2A2E39] rounded hover:bg-[#363B47]">
-                  <span className="text-lg">📊</span>
-                </button>
-                <button className="p-2 bg-[#2A2E39] rounded hover:bg-[#363B47]">
-                  <span className="text-lg">📈</span>
-                </button>
-                <button className="p-2 bg-[#2A2E39] rounded hover:bg-[#363B47]">
-                  <span className="text-lg">🔍</span>
-                </button>
               </div>
             </div>
             <div className="h-[350px]">
