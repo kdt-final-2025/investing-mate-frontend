@@ -17,8 +17,17 @@ interface YahooFinanceQuote {
 }
 
 interface YahooFinanceResponse {
-  quoteResponse: {
-    result: YahooFinanceQuote[];
+  chart: {
+    result: {
+      meta: {
+        regularMarketPrice: number;
+        regularMarketPreviousClose: number;
+        regularMarketTime: number;
+        regularMarketOpen: number;
+        regularMarketDayHigh: number;
+        regularMarketDayLow: number;
+      };
+    }[];
     error: string | null;
   };
 }

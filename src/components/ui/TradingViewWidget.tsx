@@ -2,6 +2,12 @@
 
 import { useEffect, useRef } from 'react'
 
+interface Window {
+  TradingView: any;
+}
+
+declare const window: Window
+
 export default function TradingViewWidget() {
   const container = useRef<HTMLDivElement>(null)
 
@@ -10,8 +16,8 @@ export default function TradingViewWidget() {
     script.src = 'https://s3.tradingview.com/tv.js'
     script.async = true
     script.onload = () => {
-      if (typeof TradingView !== 'undefined' && container.current) {
-        new TradingView.widget({
+      if (typeof window.TradingView !== 'undefined' && container.current) {
+        new window.TradingView.widget({
           autosize: true,
           symbol: 'SPY',
           interval: 'D',
@@ -21,10 +27,13 @@ export default function TradingViewWidget() {
           locale: 'kr',
           toolbar_bg: '#1E222D',
           enable_publishing: false,
-          hide_top_toolbar: false,
-          hide_legend: true,
-          save_image: false,
+          hide_legend: false,
+          allow_symbol_change: true,
+          studies: [],
           container_id: container.current.id,
+          show_popup_button: true,
+          popup_width: '1000',
+          popup_height: '650',
         })
       }
     }
