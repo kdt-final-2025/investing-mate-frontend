@@ -1,103 +1,81 @@
-import Image from "next/image";
+'use client'
+
+import { SplineScene } from '@/components/ui/splite'
+import { Spotlight } from '@/components/ui/spotlight'
+import { Card } from '@/components/ui/card'
+import Link from 'next/link'
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <main className="h-screen flex flex-col bg-black overflow-hidden">
+      <div className="flex-1 container mx-auto px-6 py-8 flex flex-col">
+        <Card className="flex-1 bg-black/[0.96] relative overflow-hidden rounded-3xl border border-neutral-800">
+          <Spotlight
+            className="-top-40 left-0 md:left-60 md:-top-20"
+            fill="white"
+            size={800}
+          />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+          <div className="flex h-full items-center">
+            {/* Left content */}
+            <div className="flex-1 p-8 md:p-12 relative z-10">
+              <h1 className="text-4xl md:text-7xl font-bold text-white leading-tight">
+                Red Light 가 <br />밝히는 똑똑한 투자 세상
+              </h1>
+              <p className="mt-4 md:mt-6 text-base md:text-xl text-neutral-300 max-w-2xl">
+                AI가 엄선한 뉴스, 경제 지표, 주식 차트, 그리고 커뮤니티까지!<br />Red Light와 함께 쉽고 똑똑하게 투자하세요!
+              </p>
+              <div className="mt-6 md:mt-8">
+                <Link 
+                  href="/main" 
+                  className="inline-flex items-center px-6 py-3 text-lg font-medium text-black bg-white rounded-full hover:bg-neutral-200 transition-colors duration-200 transform hover:scale-105"
+                >
+                  시작하기
+                  <svg 
+                    className="w-5 h-5 ml-2" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M13 7l5 5m0 0l-5 5m5-5H6"
+                    />
+                  </svg>
+                </Link>
+              </div>
+            </div>
+
+            {/* Right content */}
+            <div className="flex-1 relative hidden lg:flex items-center justify-center">
+              <div className="absolute inset-0">
+                <SplineScene 
+                  scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
+                  className="w-full h-full"
+                />
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Features 섹션 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+          <Card className="p-4 md:p-6 bg-black/[0.96] border border-neutral-800 hover:border-neutral-700 transition-colors">
+            <h3 className="text-base md:text-lg font-medium text-neutral-300 mb-2">실시간 데이터</h3>
+            <p className="text-sm md:text-base text-neutral-400">최신 금융 데이터를 실시간으로 제공합니다.</p>
+          </Card>
+          <Card className="p-4 md:p-6 bg-black/[0.96] border border-neutral-800 hover:border-neutral-700 transition-colors">
+            <h3 className="text-base md:text-lg font-medium text-neutral-300 mb-2">AI 분석</h3>
+            <p className="text-sm md:text-base text-neutral-400">AI가 시장 동향을 분석하고 인사이트를 제공합니다.</p>
+          </Card>
+          <Card className="p-4 md:p-6 bg-black/[0.96] border border-neutral-800 hover:border-neutral-700 transition-colors">
+            <h3 className="text-base md:text-lg font-medium text-neutral-300 mb-2">포트폴리오 관리</h3>
+            <p className="text-sm md:text-base text-neutral-400">효율적인 포트폴리오 관리 도구를 제공합니다.</p>
+          </Card>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+      </div>
+    </main>
+  )
 }
