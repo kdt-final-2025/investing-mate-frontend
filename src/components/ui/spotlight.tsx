@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 interface SpotlightProps {
   className?: string;
   fill?: string;
+  gradientColor?: string;
   size?: number;
   springOptions?: SpringOptions;
 }
@@ -14,6 +15,7 @@ interface SpotlightProps {
 export function Spotlight({
   className,
   fill = 'rgb(255, 255, 255)',
+  gradientColor = 'rgba(245, 3, 3, 0.8)',
   size = 200,
   springOptions = { bounce: 0 },
 }: SpotlightProps) {
@@ -48,17 +50,24 @@ export function Spotlight({
     [mouseX, mouseY, parentElement]
   );
 
+  const handleMouseEnter = useCallback(() => {
+    setIsHovered(true);
+  }, []);
+  const handleMouseLeave = useCallback(() => {
+    setIsHovered(false);
+  }, []);
+
   useEffect(() => {
     if (!parentElement) return;
 
     parentElement.addEventListener('mousemove', handleMouseMove);
-    parentElement.addEventListener('mouseenter', () => setIsHovered(true));
-    parentElement.addEventListener('mouseleave', () => setIsHovered(false));
+    parentElement.addEventListener('mouseenter', handleMouseEnter);
+    parentElement.addEventListener('mouseleave', handleMouseLeave);
 
     return () => {
       parentElement.removeEventListener('mousemove', handleMouseMove);
-      parentElement.removeEventListener('mouseenter', () => setIsHovered(true));
-      parentElement.removeEventListener('mouseleave', () => setIsHovered(false));
+      parentElement.removeEventListener('mouseenter', handleMouseEnter);
+      parentElement.removeEventListener('mouseleave', handleMouseLeave);
     };
   }, [parentElement, handleMouseMove]);
 
@@ -75,7 +84,7 @@ export function Spotlight({
         height: size,
         left: spotlightLeft,
         top: spotlightTop,
-        background: `radial-gradient(circle at center, ${fill} 0%, rgba(245, 3, 3, 0.8) 25%, transparent 70%)`,
+        background: `radial-gradient(circle at center, ${fill} 0%, ${gradientColor} 25%, transparent 70%)`,
         filter: 'blur(15px)',
       }}
     />
