@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMarketData } from '@/hooks/useMarketData';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
@@ -71,172 +71,196 @@ function formatPrice(num: number, symbol: string): string {
 export default function Page() {
   const supabase = createClient();
   const { data: marketData, isLoading, error } = useMarketData();
+
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string>('Guest');
+  const [userEmail, setUserEmail] = useState<string>('');
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
+  // 사용자 정보 로드
   useEffect(() => {
-    async function loadAvatar() {
-      try {
-        // 1) 우선 세션 확인
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        if (!session) {
-          setAvatarUrl(null);
-          return;
-        }
-
-        // 2) 세션이 있으면 유저 정보 가져오기
-        const { data, error: userError } = await supabase.auth.getUser();
-        if (userError) {
-          throw userError;
-        }
-
-        const user = data.user as any;
-        const raw = user.raw_user_meta_data;
-        let avatar =
-          raw?.avatar_url ||
-          raw?.picture ||
-          user.user_metadata?.avatar_url ||
-          user.user_metadata?.picture ||
-          null;
-
-        if (avatar) {
-          avatar = avatar.replace(/s\d+-c/, 's200-c');
-        }
-        setAvatarUrl(avatar);
-      } catch (err: any) {
-        // AuthSessionMissingError 등은 무시, 그 외는 콘솔에
-        if (err.name !== 'AuthSessionMissingError') {
-          console.error('loadAvatar error:', err);
-        }
+    async function loadUser() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
         setAvatarUrl(null);
+        setUserName('Guest');
+        setUserEmail('');
+        return;
       }
+      const { data, error: uErr } = await supabase.auth.getUser();
+      if (uErr || !data.user) return;
+
+      const user = data.user as any;
+      const raw = user.raw_user_meta_data;
+      setUserName(raw?.name || user.user_metadata?.full_name || user.email);
+      setUserEmail(raw?.email || user.email || '');
+
+      let avatar =
+        raw?.avatar_url ||
+        raw?.picture ||
+        user.user_metadata?.avatar_url ||
+        user.user_metadata?.picture ||
+        null;
+      if (avatar) avatar = avatar.replace(/s\d+-c/, 's200-c');
+      setAvatarUrl(avatar);
     }
 
-    loadAvatar();
-
-    // auth 상태 바뀔 때마다 갱신
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        if (session) {
-          loadAvatar();
-        } else {
-          setAvatarUrl(null);
-        }
+    loadUser();
+    const { data: listener } = supabase.auth.onAuthStateChange((_, session) => {
+      if (session) loadUser();
+      else {
+        setAvatarUrl(null);
+        setUserName('Guest');
+        setUserEmail('');
       }
-    );
-    return () => {
-      listener.subscription.unsubscribe();
-    };
+    });
+    return () => listener.subscription.unsubscribe();
   }, [supabase]);
+
+  // 외부 클릭 시 팝업 닫기
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    if (menuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [menuOpen]);
 
   return (
     <LoadingWrapper isLoading={isLoading} error={error}>
       <main className="min-h-screen bg-[#131722] text-white">
         {/* 네비게이션 바 */}
         <nav className="bg-[#1E222D] border-b border-[#363A45]">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between h-16">
-              <div className="flex items-center space-x-8">
-                <Link href="/" className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center">
-                    <span className="text-white font-bold">R</span>
-                  </div>
-                  <span className="text-xl font-bold text-white">
-                    Red Light
-                  </span>
+          <div className="container mx-auto px-4 flex items-center justify-between h-16">
+            {/* 로고 & 메뉴 */}
+            <div className="flex items-center space-x-8">
+              <Link href="/" className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold">R</span>
+                </div>
+                <span className="text-xl font-bold text-white">Red Light</span>
+              </Link>
+              <div className="flex space-x-6 max-md:hidden items-center">
+                <Link
+                  href="/class"
+                  className="text-gray-300 hover:text-white text-xs"
+                >
+                  더 클래스
                 </Link>
-                <div className="flex space-x-6 max-md:hidden items-center">
-                  <Link
-                    href="/class"
-                    className="text-gray-300 hover:text-white text-xs"
-                  >
-                    더 클래스
-                  </Link>
-                  <Link
-                    href="/market"
-                    className="text-gray-300 hover:text-white text-xs"
-                  >
-                    관심종목
-                  </Link>
-                  <Link
-                    href="/portfolio"
-                    className="text-gray-300 hover:text-white text-xs"
-                  >
-                    포트폴리오
-                  </Link>
-                  <Link
-                    href="/realtime"
-                    className="text-gray-300 hover:text-white text-xs"
-                  >
-                    실시간
-                  </Link>
-                  <Link
-                    href="/community"
-                    className="text-gray-300 hover:text-white text-xs"
-                  >
-                    커뮤니티
-                  </Link>
-                  {/* 검색 입력 */}
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="주식, 가상자산 검색"
-                      className="bg-[#2A2E39] text-white px-4 py-2 rounded-lg w-64 focus:outline-none"
-                    />
-                    <span className="absolute right-3 top-2.5 text-gray-400">
-                      🔍
-                    </span>
-                  </div>
+                <Link
+                  href="/market"
+                  className="text-gray-300 hover:text-white text-xs"
+                >
+                  관심종목
+                </Link>
+                <Link
+                  href="/portfolio"
+                  className="text-gray-300 hover:text-white text-xs"
+                >
+                  포트폴리오
+                </Link>
+                <Link
+                  href="/realtime"
+                  className="text-gray-300 hover:text-white text-xs"
+                >
+                  실시간
+                </Link>
+                <Link
+                  href="/community"
+                  className="text-gray-300 hover:text-white text-xs"
+                >
+                  커뮤니티
+                </Link>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="주식, 가상자산 검색"
+                    className="bg-[#2A2E39] text-white px-4 py-2 rounded-lg w-64 focus:outline-none"
+                  />
+                  <span className="absolute right-3 top-2.5 text-gray-400">
+                    🔍
+                  </span>
                 </div>
               </div>
-              {/* 우측 아바타 + 팝오버 */}
-              <div className="relative">
-                {avatarUrl ? (
-                  <img
-                    src={avatarUrl}
-                    alt="User avatar"
-                    className="w-8 h-8 rounded-full object-cover cursor-pointer"
-                    onClick={() => setMenuOpen((o) => !o)}
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = '/images/default-avatar.png';
-                    }}
-                  />
-                ) : (
-                  <Link
-                    href="/login"
-                    className="text-gray-300 hover:text-white text-xs"
-                  >
-                    로그인
-                  </Link>
-                )}
-                {menuOpen && (
-                  <div
-                    className="absolute right-0 mt-2 w-32 bg-white text-black rounded-lg shadow-lg"
-                    onMouseLeave={() => setMenuOpen(false)}
-                  >
-                    <div className="absolute top-0 right-3 w-3 h-3 bg-white transform rotate-45 -mt-1" />
-                    <div className="p-2">
-                      <form action={signOutAction}>
-                        <button
-                          type="submit"
-                          className="w-full text-left text-sm hover:bg-gray-100 rounded px-2 py-1"
-                        >
-                          로그아웃
-                        </button>
-                      </form>
+            </div>
+            {/* 아바타 & 팝업 */}
+            <div className="relative">
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt="User avatar"
+                  className="w-8 h-8 rounded-full object-cover cursor-pointer"
+                  onClick={() => setMenuOpen((o) => !o)}
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = '/images/default-avatar.png';
+                  }}
+                />
+              ) : (
+                <Link
+                  href="/login"
+                  className="text-gray-300 hover:text-white text-xs"
+                >
+                  로그인
+                </Link>
+              )}
+
+              {menuOpen && (
+                <div
+                  ref={menuRef}
+                  className="absolute right-0 mt-2 w-64 bg-[#2A2E39] text-white rounded-lg shadow-lg z-50"
+                >
+                  <div className="absolute top-0 right-4 w-3 h-3 bg-[#2A2E39] transform rotate-45 -mt-1" />
+                  <div className="p-4 space-y-3">
+                    <div className="flex items-center space-x-3">
+                      <img
+                        src={avatarUrl!}
+                        alt="avatar"
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                      <div className="flex flex-col">
+                        <span className="font-medium text-sm">{userName}</span>
+                        <span className="text-xs break-all">{userEmail}</span>
+                      </div>
                     </div>
+                    <hr className="border-gray-700" />
+                    <ul className="space-y-1 text-sm">
+                      <li>
+                        <Link
+                          href="/profile"
+                          className="block px-2 py-1 hover:bg-[#363B47] rounded"
+                        >
+                          프로필 보기
+                        </Link>
+                      </li>
+                      <li>
+                        <form action={signOutAction}>
+                          <button
+                            type="submit"
+                            className="w-full text-left px-2 py-1 hover:bg-[#363B47] rounded"
+                          >
+                            로그아웃
+                          </button>
+                        </form>
+                      </li>
+                    </ul>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
         </nav>
 
+        {/* 컨텐츠 영역 */}
         <div className="container mx-auto p-4">
-          {/* 알림 영역 */}
+          {/* 알림 */}
           <div className="flex items-center space-x-2 mb-6">
             <span className="text-yellow-500">🔔</span>
             <span className="text-sm text-gray-400">
@@ -246,67 +270,54 @@ export default function Page() {
               {new Date().toLocaleDateString()}
             </span>
           </div>
-
-          {/* 차트와 주요 종목 비교 영역 */}
+          {/* 차트 & 주요 종목 비교 */}
           <div className="flex flex-col lg:flex-row gap-4 mb-6">
-            {/* 차트 영역 */}
             <div className="bg-[#1E222D] rounded-lg p-4 lg:w-[65%]">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2"></div>
-                </div>
-                <div className="flex space-x-2"></div>
-              </div>
               <div className="h-[350px]">
                 <TradingViewWidget />
               </div>
             </div>
-
-            {/* 주요 종목 비교 */}
             <div className="bg-[#1E222D] rounded-lg p-4 lg:w-[35%]">
               <h2 className="text-xl font-bold mb-4">주요 종목 비교하기</h2>
               <div className="grid grid-cols-1 gap-4 max-h-[350px] overflow-y-auto">
                 {marketData.map((data) => (
                   <div
                     key={data.symbol}
-                    className="relative bg-[#2A2E39] p-3 rounded-lg overflow-hidden group hover:shadow-lg transition-all duration-300"
+                    className="relative bg-[#2A2E39] p-3 rounded-lg group hover:shadow-lg transition duration-300"
                   >
-                    <div className="relative z-10">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
-                            {SYMBOL_DISPLAY[data.symbol] ||
-                              data.symbol.charAt(0)}
-                          </div>
-                          <div>
-                            <h3 className="font-medium">
-                              {data.name || data.symbol}
-                            </h3>
-                            <span className="text-sm text-gray-400">
-                              {data.symbol}
-                            </span>
-                          </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
+                          {SYMBOL_DISPLAY[data.symbol] || data.symbol.charAt(0)}
                         </div>
-                        <div className="text-right">
-                          <div className="text-lg font-bold">
-                            {formatPrice(data.price, data.symbol)}
-                          </div>
-                          <div
-                            className={`text-sm ${
-                              data.change > 0
-                                ? 'text-green-500'
-                                : data.change < 0
-                                  ? 'text-red-500'
-                                  : 'text-gray-400'
-                            }`}
-                          >
-                            {data.change === 0
-                              ? '-'
-                              : data.change > 0
-                                ? '▲'
-                                : '▼'}{' '}
-                            {formatChangePercent(Math.abs(data.changePercent))}%
-                          </div>
+                        <div>
+                          <h3 className="font-medium">
+                            {data.name || data.symbol}
+                          </h3>
+                          <span className="text-sm text-gray-400">
+                            {data.symbol}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-bold">
+                          {formatPrice(data.price, data.symbol)}
+                        </div>
+                        <div
+                          className={`text-sm ${
+                            data.change > 0
+                              ? 'text-green-500'
+                              : data.change < 0
+                                ? 'text-red-500'
+                                : 'text-gray-400'
+                          }`}
+                        >
+                          {data.change === 0
+                            ? '-'
+                            : data.change > 0
+                              ? '▲'
+                              : '▼'}{' '}
+                          {formatChangePercent(Math.abs(data.changePercent))}%
                         </div>
                       </div>
                     </div>
@@ -315,7 +326,6 @@ export default function Page() {
               </div>
             </div>
           </div>
-
           {/* 뉴스 섹션 */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
