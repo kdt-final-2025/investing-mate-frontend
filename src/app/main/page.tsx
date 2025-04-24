@@ -1,17 +1,16 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMarketData } from '@/hooks/useMarketData';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 import LoadingWrapper from '@/components/LoadingWrapper';
+import { signOutAction } from '@/utils/actions';
 
 const TradingViewWidget = dynamic(
   () => import('@/components/ui/TradingViewWidget'),
-  {
-    ssr: false,
-  }
+  { ssr: false }
 );
 
 // 심볼 표시를 위한 매핑
@@ -73,40 +72,54 @@ export default function Page() {
   const supabase = createClient();
   const { data: marketData, isLoading, error } = useMarketData();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     async function loadAvatar() {
-      const { data, error } = await supabase.auth.getUser();
-      if (error) {
-        console.error('getUser error', error);
+      try {
+        // 1) 우선 세션 확인
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!session) {
+          setAvatarUrl(null);
+          return;
+        }
+
+        // 2) 세션이 있으면 유저 정보 가져오기
+        const { data, error: userError } = await supabase.auth.getUser();
+        if (userError) {
+          throw userError;
+        }
+
+        const user = data.user as any;
+        const raw = user.raw_user_meta_data;
+        let avatar =
+          raw?.avatar_url ||
+          raw?.picture ||
+          user.user_metadata?.avatar_url ||
+          user.user_metadata?.picture ||
+          null;
+
+        if (avatar) {
+          avatar = avatar.replace(/s\d+-c/, 's200-c');
+        }
+        setAvatarUrl(avatar);
+      } catch (err: any) {
+        // AuthSessionMissingError 등은 무시, 그 외는 콘솔에
+        if (err.name !== 'AuthSessionMissingError') {
+          console.error('loadAvatar error:', err);
+        }
         setAvatarUrl(null);
-        return;
       }
-
-      const user = data.user;
-      // raw_user_meta_data 우선, 없으면 user_metadata
-      const raw = (user as any).raw_user_meta_data;
-      let avatar =
-        raw?.avatar_url ||
-        raw?.picture ||
-        user?.user_metadata?.avatar_url ||
-        user?.user_metadata?.picture ||
-        null;
-
-      // 구글링크라면 s96-c → s200-c로 교체
-      if (avatar) {
-        avatar = avatar.replace(/s\d+-c/, 's200-c');
-      }
-
-      setAvatarUrl(avatar);
     }
 
     loadAvatar();
 
-    // 로그인/로그아웃 시에도 갱신
+    // auth 상태 바뀔 때마다 갱신
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        if (session?.user) {
+        if (session) {
           loadAvatar();
         } else {
           setAvatarUrl(null);
@@ -178,12 +191,14 @@ export default function Page() {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
+              {/* 우측 아바타 + 팝오버 */}
+              <div className="relative">
                 {avatarUrl ? (
                   <img
                     src={avatarUrl}
                     alt="User avatar"
-                    className="w-8 h-8 rounded-full object-cover"
+                    className="w-8 h-8 rounded-full object-cover cursor-pointer"
+                    onClick={() => setMenuOpen((o) => !o)}
                     onError={(e) => {
                       e.currentTarget.onerror = null;
                       e.currentTarget.src = '/images/default-avatar.png';
@@ -196,6 +211,24 @@ export default function Page() {
                   >
                     로그인
                   </Link>
+                )}
+                {menuOpen && (
+                  <div
+                    className="absolute right-0 mt-2 w-32 bg-white text-black rounded-lg shadow-lg"
+                    onMouseLeave={() => setMenuOpen(false)}
+                  >
+                    <div className="absolute top-0 right-3 w-3 h-3 bg-white transform rotate-45 -mt-1" />
+                    <div className="p-2">
+                      <form action={signOutAction}>
+                        <button
+                          type="submit"
+                          className="w-full text-left text-sm hover:bg-gray-100 rounded px-2 py-1"
+                        >
+                          로그아웃
+                        </button>
+                      </form>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
