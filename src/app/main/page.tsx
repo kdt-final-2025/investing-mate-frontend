@@ -96,50 +96,25 @@ export default function Page() {
                 </div>
                 <span className="text-xl font-bold text-white">Red Light</span>
               </Link>
-              <div className="flex space-x-6 max-md:hidden">
-                <Link
-                  href="/class"
-                  className="text-gray-300 hover:text-white text-xs"
-                >
-                  더 클래스
-                </Link>
-                <Link
-                  href="/market"
-                  className="text-gray-300 hover:text-white text-xs"
-                >
-                  관심종목
-                </Link>
-                <Link
-                  href="/portfolio"
-                  className="text-gray-300 hover:text-white text-xs"
-                >
-                  포트폴리오
-                </Link>
-                <Link
-                  href="/realtime"
-                  className="text-gray-300 hover:text-white text-xs"
-                >
-                  실시간
-                </Link>
-                <Link
-                  href="/community"
-                  className="text-gray-300 hover:text-white text-xs"
-                >
-                  커뮤니티
-                </Link>
+              <div className="flex space-x-6 max-md:hidden items-center">
+                <Link href="/class" className="text-gray-300 hover:text-white text-xs">더 클래스</Link>
+                <Link href="/market" className="text-gray-300 hover:text-white text-xs">관심종목</Link>
+                <Link href="/portfolio" className="text-gray-300 hover:text-white text-xs">포트폴리오</Link>
+                <Link href="/realtime" className="text-gray-300 hover:text-white text-xs">실시간</Link>
+                <Link href="/community" className="text-gray-300 hover:text-white text-xs">커뮤니티</Link>
+                {/* 검색 입력 */}
+                <div className="relative">
+                  <input
+                      type="text"
+                      placeholder="주식, 가상자산 검색"
+                      className="bg-[#2A2E39] text-white px-4 py-2 rounded-lg w-64 focus:outline-none"
+                  />
+                  <span className="absolute right-3 top-2.5 text-gray-400">🔍</span>
+                </div>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="주식, 가상자산 검색"
-                  className="bg-[#2A2E39] text-white px-4 py-2 rounded-lg w-64 focus:outline-none"
-                />
-                <span className="absolute right-3 top-2.5 text-gray-400">
-                  🔍
-                </span>
-              </div>
+            <div>
+              <Link href="/login" className="text-gray-300 hover:text-white text-xs">로그인</Link>
             </div>
           </div>
         </div>
