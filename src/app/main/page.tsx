@@ -71,12 +71,14 @@ function formatPrice(num: number, symbol: string): string {
 export default function Page() {
   const supabase = createClient();
   const { data: marketData, isLoading, error } = useMarketData();
-
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>('Guest');
   const [userEmail, setUserEmail] = useState<string>('');
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  //안 쓰지만 일단 유지함
+  const [selectedTimeframe, setSelectedTimeframe] = useState('1m');
 
   // 사용자 정보 로드
   useEffect(() => {
