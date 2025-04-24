@@ -1,9 +1,7 @@
-'use server';
-
 import {GoogleLoginButton} from "@/components/loginButton/googleLogin";
 import {KakaoLoginButton} from "@/components/loginButton/kakaoLogin";
 
-export async function LoginPage() {
+export function LoginPage() {
     return (
         <main className="min-h-screen flex items-center justify-center bg-[#131722] text-white px-4">
             <div className="w-full max-w-md bg-[#1E222D] rounded-2xl p-8 space-y-6">
