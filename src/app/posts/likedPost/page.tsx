@@ -1,5 +1,5 @@
 import { LikedPostList } from '@/components/posts/LikedPostList';
-import { fetchLikedPosts } from '@/components/posts/post.service';
+import { fetchLikedPosts } from '@/service/posts';
 
 export const dynamic = 'force-dynamic';
 

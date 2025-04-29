@@ -5,7 +5,7 @@ import {
   deleteComment,
   updateComment,
   likeComment,
-} from './comment.service';
+} from '../../service/comments';
 import CommentForm from './CommentForm';
 interface Props {
   comment: Comment;

@@ -11,10 +11,10 @@ type Post = {
   likeCount: number;
 };
 
-export function PostItem({ post }: { post: Post }) {
+export function PostItemClient({ post }: { post: Post }) {
   return (
     <Link
-      href={`/src/pages/posts/${post.id}`}
+      href={`/posts/${post.id}`} // 경로 수정 (app 디렉토리 구조에 맞게)
       className="block bg-[#1E222D] p-4 rounded-xl shadow hover:shadow-md transition"
     >
       <h3 className="text-lg font-semibold text-white">{post.postTitle}</h3>

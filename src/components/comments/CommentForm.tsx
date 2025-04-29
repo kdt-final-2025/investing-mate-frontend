@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import { createComment } from './comment.service';
+import { createComment } from '../../service/comments';
 
 interface Props {
   boardId: string;

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { Comment, fetchPaginatedComments } from './comment.service';
+import { Comment, fetchPaginatedComments } from '../../service/comments';
 import CommentItem from './CommentItem';
 import CommentForm from './CommentForm';
 
