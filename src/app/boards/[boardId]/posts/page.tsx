@@ -6,14 +6,22 @@ interface Props {
 }
 
 export default async function PostsPage({ searchParams }: Props) {
-  const boardId = searchParams.boardId || 'default'; // URL 파라미터에서 boardId 가져오기
+  const boardId = searchParams.boardId || 'default';
 
-  // 초기 게시글 데이터 서버에서 가져오기 (SSR)
-  const initialPosts = await fetchPosts(boardId, 0);
+  try {
+    const initialPosts = await fetchPosts(boardId, 0);
 
-  return (
-    <div className="min-h-screen bg-[#131722] text-white">
-      <PostListClient initialPosts={initialPosts} boardId={boardId} />
-    </div>
-  );
+    return (
+      <div className="min-h-screen bg-[#131722] text-white">
+        <PostListClient initialPosts={initialPosts} boardId={boardId} />
+      </div>
+    );
+  } catch (error) {
+    console.error('게시글 불러오기 실패:', error);
+    return (
+      <div className="min-h-screen flex items-center justify-center text-white">
+        게시글을 불러올 수 없습니다.
+      </div>
+    );
+  }
 }
