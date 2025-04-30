@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useMarketData } from '@/hooks/useMarketData';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { createClient } from '@/utils/supabase/client';
+import { useMarketData } from '@/hooks/useMarketData';
+import { useUser } from '@/hooks/useUser';
 import LoadingWrapper from '@/components/LoadingWrapper';
+import { createClient } from '@/utils/supabase/client';
 import { signOutAction } from '@/utils/actions';
+import { useClickOutside } from '@/hooks/useClickOutside';
 
 const TradingViewWidget = dynamic(
   () => import('@/components/ui/TradingViewWidget'),
@@ -71,69 +73,12 @@ function formatPrice(num: number, symbol: string): string {
 export default function Page() {
   const supabase = createClient();
   const { data: marketData, isLoading, error } = useMarketData();
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [userName, setUserName] = useState<string>('Guest');
-  const [userEmail, setUserEmail] = useState<string>('');
+  const { userName, userEmail, avatarUrl } = useUser(supabase);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  //안 쓰지만 일단 유지함
-  const [selectedTimeframe, setSelectedTimeframe] = useState('1m');
-
-  // 사용자 정보 로드
-  useEffect(() => {
-    async function loadUser() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) {
-        setAvatarUrl(null);
-        setUserName('Guest');
-        setUserEmail('');
-        return;
-      }
-      const { data, error: uErr } = await supabase.auth.getUser();
-      if (uErr || !data.user) return;
-
-      const user = data.user as any;
-      const raw = user.raw_user_meta_data;
-      setUserName(raw?.name || user.user_metadata?.full_name || user.email);
-      setUserEmail(raw?.email || user.email || '');
-
-      let avatar =
-        raw?.avatar_url ||
-        raw?.picture ||
-        user.user_metadata?.avatar_url ||
-        user.user_metadata?.picture ||
-        null;
-      if (avatar) avatar = avatar.replace(/s\d+-c/, 's200-c');
-      setAvatarUrl(avatar);
-    }
-
-    loadUser();
-    const { data: listener } = supabase.auth.onAuthStateChange((_, session) => {
-      if (session) loadUser();
-      else {
-        setAvatarUrl(null);
-        setUserName('Guest');
-        setUserEmail('');
-      }
-    });
-    return () => listener.subscription.unsubscribe();
-  }, [supabase]);
-
-  // 외부 클릭 시 팝업 닫기
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
-    }
-    if (menuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [menuOpen]);
+  // 메뉴가 열려 있을 때만 외부 클릭 리스너 활성화
+  useClickOutside<HTMLDivElement>(menuRef, () => setMenuOpen(false), menuOpen);
 
   return (
     <LoadingWrapper isLoading={isLoading} error={error}>
