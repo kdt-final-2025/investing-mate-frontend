@@ -1,14 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useMarketData } from '@/hooks/useMarketData';
 import { useUser } from '@/hooks/useUser';
 import LoadingWrapper from '@/components/LoadingWrapper';
 import { createClient } from '@/utils/supabase/client';
-import { signOutAction } from '@/utils/actions';
-import { useClickOutside } from '@/hooks/useClickOutside';
+import AvatarMenu from "@/components/ui/avatarMenu";
 
 const TradingViewWidget = dynamic(
   () => import('@/components/ui/TradingViewWidget'),
@@ -74,11 +72,6 @@ export default function Page() {
   const supabase = createClient();
   const { data: marketData, isLoading, error } = useMarketData();
   const { userName, userEmail, avatarUrl } = useUser(supabase);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  // 메뉴가 열려 있을 때만 외부 클릭 리스너 활성화
-  useClickOutside<HTMLDivElement>(menuRef, () => setMenuOpen(false), menuOpen);
 
   return (
     <LoadingWrapper isLoading={isLoading} error={error}>
@@ -137,71 +130,13 @@ export default function Page() {
                 </div>
               </div>
             </div>
-            {/* 아바타 & 팝업 */}
-            <div className="relative">
-              {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt="User avatar"
-                  className="w-8 h-8 rounded-full object-cover cursor-pointer"
-                  onClick={() => setMenuOpen((o) => !o)}
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = '/images/default-avatar.png';
-                  }}
-                />
-              ) : (
-                <Link
-                  href="/login"
-                  className="text-gray-300 hover:text-white text-xs"
-                >
-                  로그인
-                </Link>
-              )}
 
-              {menuOpen && (
-                <div
-                  ref={menuRef}
-                  className="absolute right-0 mt-2 w-64 bg-[#2A2E39] text-white rounded-lg shadow-lg z-50"
-                >
-                  <div className="absolute top-0 right-4 w-3 h-3 bg-[#2A2E39] transform rotate-45 -mt-1" />
-                  <div className="p-4 space-y-3">
-                    <div className="flex items-center space-x-3">
-                      <img
-                        src={avatarUrl!}
-                        alt="avatar"
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
-                      <div className="flex flex-col">
-                        <span className="font-medium text-sm">{userName}</span>
-                        <span className="text-xs break-all">{userEmail}</span>
-                      </div>
-                    </div>
-                    <hr className="border-gray-700" />
-                    <ul className="space-y-1 text-sm">
-                      <li>
-                        <Link
-                          href="/profile"
-                          className="block px-2 py-1 hover:bg-[#363B47] rounded"
-                        >
-                          프로필 보기
-                        </Link>
-                      </li>
-                      <li>
-                        <form action={signOutAction}>
-                          <button
-                            type="submit"
-                            className="w-full text-left px-2 py-1 hover:bg-[#363B47] rounded"
-                          >
-                            로그아웃
-                          </button>
-                        </form>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              )}
-            </div>
+            {/* 우측 아바타 & 팝업 */}
+            <AvatarMenu
+              avatarUrl={avatarUrl}
+              userName={userName}
+              userEmail={userEmail}
+            />
           </div>
         </nav>
 
