@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { SupabaseClient, Session, User } from '@supabase/supabase-js';
+import { SupabaseClient, Session } from '@supabase/supabase-js';
 
 export interface UserInfo {
   userName: string;
