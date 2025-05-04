@@ -6,7 +6,7 @@ import { useMarketData } from '@/hooks/useMarketData';
 import { useUser } from '@/hooks/useUser';
 import LoadingWrapper from '@/components/LoadingWrapper';
 import { createClient } from '@/utils/supabase/client';
-import AvatarMenu from "@/components/ui/avatarMenu";
+import AvatarMenu from "@/components/Profile/avatarMenu";
 
 const TradingViewWidget = dynamic(
   () => import('@/components/ui/TradingViewWidget'),

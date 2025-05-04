@@ -1,9 +1,10 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { signOutAction } from '@/utils/actions';
 import { useClickOutside } from '@/hooks/useClickOutside';
+import { createClient } from '@/utils/supabase/client';
 
 interface AvatarMenuProps {
   avatarUrl: string | null;
@@ -18,10 +19,38 @@ export default function AvatarMenu({
 }: AvatarMenuProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const supabase = createClient();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const didFetch = useRef(false);
 
-  // 메뉴가 열려 있을 때만 외부 클릭 리스너 활성화
+  // 외부 클릭 시 메뉴 닫기
   useClickOutside(menuRef, () => setMenuOpen(false), menuOpen);
 
+  // 관리자 여부 조회
+  useEffect(() => {
+    async function fetchAdminFlag() {
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+      if (sessionError || !session) return;
+      const token = session.access_token;
+      const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+      const res = await fetch(`${API_BASE}/member/role`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setIsAdmin(json.isAdmin);
+      }
+    }
+
+    if (didFetch.current) return;
+    didFetch.current = true;
+    fetchAdminFlag();
+  }, [supabase]);
+
+  // 로그인 안 된 상태
   if (!avatarUrl) {
     return (
       <Link href="/login" className="text-gray-300 hover:text-white text-xs">
@@ -71,6 +100,16 @@ export default function AvatarMenu({
                   프로필 보기
                 </Link>
               </li>
+              {isAdmin && (
+                <li>
+                  <Link
+                    href="/admin"
+                    className="block px-2 py-1 hover:bg-[#363B47] rounded"
+                  >
+                    운영모드
+                  </Link>
+                </li>
+              )}
               <li>
                 <form action={signOutAction}>
                   <button
