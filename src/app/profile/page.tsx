@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 import { useUser } from '@/hooks/useProfile/useUser';
+import { useAdminFlag } from '@/hooks/useProfile/useAdminFlag';
 import AvatarMenu from '@/components/profile/avatarMenu';
 import LoadingWrapper from '@/components/LoadingWrapper';
 
@@ -12,17 +13,21 @@ interface Comment {
   content: string;
   createdAt: string;
 }
+
 interface Post {
   id: string;
   title: string;
   createdAt: string;
 }
+
 // backend에서 내려주는 status 값
 type ApplicationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
 export default function ProfilePage() {
   const supabase = createClient();
   const { avatarUrl, userName, userEmail } = useUser(supabase);
+
+  const { isAdmin, isLoading: loadingAdmin } = useAdminFlag();
 
   const [comments, setComments] = useState<Comment[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -52,6 +57,7 @@ export default function ProfilePage() {
         setLoadingComments(false);
       }
     }
+
     fetchComments();
   }, [API_BASE]);
 
@@ -68,52 +74,48 @@ export default function ProfilePage() {
         setLoadingPosts(false);
       }
     }
+
     fetchPosts();
   }, [API_BASE]);
 
   // 내 기자 신청 상태 조회
   useEffect(() => {
-    async function fetchAppStatus() {
-      try {
-        const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession();
-        if (sessionError || !session) return;
-        const token = session.access_token;
-        const res = await fetch(`${API_BASE}/reporter-applications/me`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        if (res.ok) {
-          const json = await res.json();
-          setAppStatus(json.status as ApplicationStatus);
-          if (json.status === 'PENDING') setApplied(true);
-          if (json.status === 'APPROVED') setApplied(true);
-        }
-      } catch (e) {
-        console.error('Failed to fetch application status', e);
-      }
-    }
-    fetchAppStatus();
-  }, [API_BASE, supabase]);
+    // 1) 관리자 여부가 아직 로딩 중이면 대기
+    if (loadingAdmin) return;
+    // 2) 관리자인 경우 아예 조회 생략
+    if (isAdmin) return;
 
-  // 기자 신청 핸들러
+    (async () => {
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+      if (sessionError || !session) return;
+      const token = session.access_token;
+      const res = await fetch(`${API_BASE}/reporter-applications/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setAppStatus(json.status);
+        if (json.status === 'PENDING' || json.status === 'APPROVED') {
+          setApplied(true);
+        }
+      }
+    })();
+  }, [API_BASE, supabase, isAdmin, loadingAdmin]);
+
+  // 기자 신청 핸들러 (관리자는 실행되지 않음)
   const handleApply = async () => {
     setApplying(true);
     setApplyError(null);
-
     try {
       const {
         data: { session },
         error: sessionError,
       } = await supabase.auth.getSession();
-      if (sessionError || !session) {
-        throw new Error('로그인이 필요합니다.');
-      }
+      if (sessionError || !session) throw new Error('로그인이 필요합니다.');
       const token = session.access_token;
-
       const res = await fetch(`${API_BASE}/reporter-applications`, {
         method: 'POST',
         headers: {
@@ -121,7 +123,6 @@ export default function ProfilePage() {
           Authorization: `Bearer ${token}`,
         },
       });
-
       if (!res.ok) {
         const body = await res.text();
         throw new Error(`신청 실패: ${body || res.statusText}`);
@@ -137,130 +138,143 @@ export default function ProfilePage() {
   };
 
   return (
-      <LoadingWrapper isLoading={loadingComments || loadingPosts} error={null}>
-        <div className="min-h-screen bg-[#131722] text-white">
-          <nav className="bg-[#1E222D] border-b border-[#363A45]">
-            <div className="max-w-4xl mx-auto px-4 flex items-center justify-between h-16">
-              <Link href="/main" className="text-white font-bold">
-                ← 메인페이지로
-              </Link>
-              <AvatarMenu
-                  avatarUrl={avatarUrl}
-                  userName={userName}
-                  userEmail={userEmail}
-              />
-            </div>
-          </nav>
+    <LoadingWrapper isLoading={loadingComments || loadingPosts} error={null}>
+      <div className="min-h-screen bg-[#131722] text-white">
+        <nav className="bg-[#1E222D] border-b border-[#363A45]">
+          <div className="max-w-4xl mx-auto px-4 flex items-center justify-between h-16">
+            <Link href="/main" className="text-white font-bold">
+              ← 메인페이지로
+            </Link>
+            <AvatarMenu
+              avatarUrl={avatarUrl}
+              userName={userName}
+              userEmail={userEmail}
+            />
+          </div>
+        </nav>
 
-          <div className="max-w-4xl mx-auto p-6 space-y-6">
-            <section className="bg-[#1E222D] rounded-lg p-6 space-y-4">
-              <div className="flex items-center space-x-6">
-                {avatarUrl && (
-                    <img
-                        src={avatarUrl}
-                        alt="avatar"
-                        className="w-16 h-16 rounded-full object-cover"
-                    />
-                )}
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <h1 className="text-2xl font-bold">{userName}</h1>
-                    {appStatus === 'APPROVED' && (
-                        <span className="inline-block text-xs font-semibold px-2 py-1 rounded-full bg-green-500 text-white">
+        <div className="max-w-4xl mx-auto p-6 space-y-6">
+          <section className="bg-[#1E222D] rounded-lg p-6 space-y-4">
+            <div className="flex items-center space-x-6">
+              {avatarUrl && (
+                <img
+                  src={avatarUrl}
+                  alt="avatar"
+                  className="w-16 h-16 rounded-full object-cover"
+                />
+              )}
+              <div>
+                <div className="flex items-center space-x-2">
+                  <h1 className="text-2xl font-bold">{userName}</h1>
+
+                  {/* 관리자 딱지 */}
+                  {isAdmin ? (
+                    <span
+                      className="
+                        inline-block text-xs font-semibold px-2 py-1 rounded-full
+                        border border-purple-500 text-purple-400
+                        shadow-[0_0_8px_rgba(139,92,246,0.7)]
+                        [text-shadow:0_0_4px_rgba(139,92,246,0.8)]
+                      "
+                    >
+                      관리자
+                    </span>
+                  ) : appStatus === 'APPROVED' ? (
+                    <span className="inline-block text-xs font-semibold px-2 py-1 rounded-full bg-green-500 text-white">
                       기자
                     </span>
-                    )}
-                    {appStatus === 'PENDING' && (
-                        <span className="inline-block text-xs font-semibold px-2 py-1 rounded-full bg-yellow-500 text-black">
+                  ) : appStatus === 'PENDING' ? (
+                    <span className="inline-block text-xs font-semibold px-2 py-1 rounded-full bg-yellow-500 text-black">
                       신청중
                     </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-400 break-all">{userEmail}</p>
+                  ) : null}
                 </div>
+                <p className="text-sm text-gray-400 break-all">{userEmail}</p>
               </div>
-              <button
-                  onClick={handleApply}
-                  disabled={applying || applied}
-                  className="
-                w-full
-                bg-[#2A2E39]
-                text-white
-                font-semibold
-                py-2
-                rounded-lg
-                hover:bg-[#373f4d]
-                transition
-                disabled:opacity-50
-              "
-              >
-                {applying ? '신청 중…' : applied ? '신청 완료' : '기자 신청하기'}
-              </button>
-            </section>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <section className="bg-[#1E222D] rounded-lg p-6 space-y-4">
-                <h2 className="text-xl font-semibold">내 댓글</h2>
-                {loadingComments ? (
-                    <p className="text-gray-400">불러오는 중…</p>
-                ) : comments.length > 0 ? (
-                    comments.map((c) => (
-                        <div key={c.id} className="border-b border-gray-700 pb-2">
-                          <p>{c.content}</p>
-                          <time className="text-xs text-gray-500 block">
-                            {new Date(c.createdAt).toLocaleString()}
-                          </time>
-                        </div>
-                    ))
-                ) : (
-                    <p className="text-gray-400">작성한 댓글이 없습니다.</p>
-                )}
-              </section>
-
-              <section className="bg-[#1E222D] rounded-lg p-6 space-y-4">
-                <h2 className="text-xl font-semibold">내 게시글</h2>
-                {loadingPosts ? (
-                    <p className="text-gray-400">불러오는 중…</p>
-                ) : posts.length > 0 ? (
-                    posts.map((p) => (
-                        <div key={p.id} className="border-b border-gray-700 pb-2">
-                          <Link
-                              href={`/posts/${p.id}`}
-                              className="font-medium hover:underline"
-                          >
-                            {p.title}
-                          </Link>
-                          <time className="text-xs text-gray-500 block">
-                            {new Date(p.createdAt).toLocaleString()}
-                          </time>
-                        </div>
-                    ))
-                ) : (
-                    <p className="text-gray-400">작성한 게시글이 없습니다.</p>
-                )}
-              </section>
             </div>
 
-            {showErrorModal && applyError && (
-                <div className="fixed inset-0 flex items-center justify-center z-50">
-                  <div className="absolute inset-0 bg-black opacity-50" />
-                  <div className="relative bg-[#1E222D] rounded-lg p-6 max-w-sm w-full mx-4 text-white z-10">
-                    <h3 className="text-lg font-semibold mb-2">오류</h3>
-                    <p className="text-sm mb-4">{applyError}</p>
-                    <button
-                        onClick={() => {
-                          setShowErrorModal(false);
-                          setApplyError(null);
-                        }}
-                        className="mt-2 w-full bg-[#2A2E39] py-2 rounded-lg hover:bg-[#373f4d] transition"
-                    >
-                      닫기
-                    </button>
-                  </div>
-                </div>
+            {/* 관리자가 아닐 때만 신청 버튼 노출 */}
+            {!isAdmin && (
+              <button
+                onClick={handleApply}
+                disabled={applying || applied}
+                className="
+                  w-full bg-[#2A2E39] text-white font-semibold py-2 rounded-lg
+                  hover:bg-[#373f4d] transition disabled:opacity-50
+                "
+              >
+                {applying
+                  ? '신청 중…'
+                  : applied
+                    ? '신청 완료'
+                    : '기자 신청하기'}
+              </button>
             )}
+          </section>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <section className="bg-[#1E222D] rounded-lg p-6 space-y-4">
+              <h2 className="text-xl font-semibold">내 댓글</h2>
+              {loadingComments ? (
+                <p className="text-gray-400">불러오는 중…</p>
+              ) : comments.length > 0 ? (
+                comments.map((c) => (
+                  <div key={c.id} className="border-b border-gray-700 pb-2">
+                    <p>{c.content}</p>
+                    <time className="text-xs text-gray-500 block">
+                      {new Date(c.createdAt).toLocaleString()}
+                    </time>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-400">작성한 댓글이 없습니다.</p>
+              )}
+            </section>
+
+            <section className="bg-[#1E222D] rounded-lg p-6 space-y-4">
+              <h2 className="text-xl font-semibold">내 게시글</h2>
+              {loadingPosts ? (
+                <p className="text-gray-400">불러오는 중…</p>
+              ) : posts.length > 0 ? (
+                posts.map((p) => (
+                  <div key={p.id} className="border-b border-gray-700 pb-2">
+                    <Link
+                      href={`/posts/${p.id}`}
+                      className="font-medium hover:underline"
+                    >
+                      {p.title}
+                    </Link>
+                    <time className="text-xs text-gray-500 block">
+                      {new Date(p.createdAt).toLocaleString()}
+                    </time>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-400">작성한 게시글이 없습니다.</p>
+              )}
+            </section>
           </div>
+
+          {showErrorModal && applyError && (
+            <div className="fixed inset-0 flex items-center justify-center z-50">
+              <div className="absolute inset-0 bg-black opacity-50" />
+              <div className="relative bg-[#1E222D] rounded-lg p-6 max-w-sm w-full mx-4 text-white z-10">
+                <h3 className="text-lg font-semibold mb-2">오류</h3>
+                <p className="text-sm mb-4">{applyError}</p>
+                <button
+                  onClick={() => {
+                    setShowErrorModal(false);
+                    setApplyError(null);
+                  }}
+                  className="mt-2 w-full bg-[#2A2E39] py-2 rounded-lg hover:bg-[#373f4d] transition"
+                >
+                  닫기
+                </button>
+              </div>
+            </div>
+          )}
         </div>
-      </LoadingWrapper>
+      </div>
+    </LoadingWrapper>
   );
 }
