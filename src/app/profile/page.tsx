@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
-import { useUser } from '@/hooks/useUser';
-import AvatarMenu from '@/components/Profile/avatarMenu';
+import { useUser } from '@/hooks/useProfile/useUser';
+import AvatarMenu from '@/components/profile/avatarMenu';
 import LoadingWrapper from '@/components/LoadingWrapper';
 
 interface Comment {

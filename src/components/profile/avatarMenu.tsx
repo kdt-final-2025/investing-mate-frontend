@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { signOutAction } from '@/utils/actions';
-import { useClickOutside } from '@/hooks/useClickOutside';
+import { useClickOutside } from '@/hooks/useProfile/useClickOutside';
 import { createClient } from '@/utils/supabase/client';
 
 interface AvatarMenuProps {

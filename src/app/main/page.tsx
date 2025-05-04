@@ -3,10 +3,10 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useMarketData } from '@/hooks/useMarketData';
-import { useUser } from '@/hooks/useUser';
+import { useUser } from '@/hooks/useProfile/useUser';
 import LoadingWrapper from '@/components/LoadingWrapper';
 import { createClient } from '@/utils/supabase/client';
-import AvatarMenu from "@/components/Profile/avatarMenu";
+import AvatarMenu from "@/components/profile/avatarMenu";
 
 const TradingViewWidget = dynamic(
   () => import('@/components/ui/TradingViewWidget'),
