@@ -20,7 +20,7 @@ export default function AvatarMenu({
 }: AvatarMenuProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const { isAdmin, isLoading: loadingAdmin } = useAdminFlag();
+  const { isAdmin, loading: loadingAdmin } = useAdminFlag();
 
   // 외부 클릭 시 메뉴 닫기
   useClickOutside(menuRef, () => setMenuOpen(false), menuOpen);
