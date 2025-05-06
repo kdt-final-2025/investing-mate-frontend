@@ -3,21 +3,26 @@
 
 import Link from 'next/link';
 import LoadingWrapper from '@/components/LoadingWrapper';
+import NavBar from '@/components/navBar';
+import { createClient } from '@/utils/supabase/client';
 import { useUser } from '@/hooks/useProfile/useUser';
 import { useComments } from '@/hooks/useProfile/useComments';
 import { usePosts } from '@/hooks/useProfile/usePosts';
 import { useReporterApplication } from '@/hooks/useProfile/useReporterApplication';
-import { createClient } from '@/utils/supabase/client';
-import NavBar from '@/components/navBar';
 
 export default function ProfilePage() {
   const supabase = createClient();
   const { avatarUrl, userName, userEmail } = useUser(supabase);
+
   const { comments, loading: loadingComments } = useComments();
   const { posts, loading: loadingPosts } = usePosts();
+
+  // useReporterApplication 하나로 isAdmin, isReporter, 로딩, 상태, 핸들러 전부 반환
   const {
     isAdmin,
+    isReporter,
     loadingAdmin,
+    loadingReporter,
     status,
     applying,
     applied,
@@ -28,14 +33,12 @@ export default function ProfilePage() {
   } = useReporterApplication();
 
   // 전체 로딩 여부
-  const isLoading = loadingComments || loadingPosts || loadingAdmin;
+  const isLoading =
+    loadingComments || loadingPosts || loadingAdmin || loadingReporter;
 
   return (
     <LoadingWrapper isLoading={isLoading} error={null}>
       <div className="min-h-screen bg-[#131722] text-white">
-        {/* 네비게이션 */}
-        {/* NavBar 컴포넌트로 교체 */}
-
         <NavBar
           avatarUrl={avatarUrl}
           userName={userName}
@@ -56,18 +59,20 @@ export default function ProfilePage() {
               <div>
                 <div className="flex items-center space-x-2">
                   <h1 className="text-2xl font-bold">{userName}</h1>
+
+                  {/* Badge 렌더링: isAdmin → isReporter → PENDING */}
                   {isAdmin ? (
                     <span
                       className="
-                        inline-block text-xs font-semibold px-2 py-1 rounded-full
-                        border border-purple-500 text-purple-400
-                        shadow-[0_0_8px_rgba(139,92,246,0.7)]
-                        [text-shadow:0_0_4px_rgba(139,92,246,0.8)]
-                      "
+                         inline-block text-xs font-semibold px-2 py-1 rounded-full
+                         border border-purple-500 text-purple-400
+                         shadow-[0_0_8px_rgba(139,92,246,0.7)]
+                         [text-shadow:0_0_4px_rgba(139,92,246,0.8)]
+                       "
                     >
                       관리자
                     </span>
-                  ) : status === 'APPROVED' ? (
+                  ) : isReporter ? (
                     <span className="inline-block text-xs font-semibold px-2 py-1 rounded-full bg-green-500 text-white">
                       기자
                     </span>
@@ -81,15 +86,15 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* 기자 신청 버튼 (관리자 제외) */}
-            {!isAdmin && (
+            {/* 관리자·기자가 아닌 사람만 신청 버튼 */}
+            {!isAdmin && !isReporter && (
               <button
                 onClick={apply}
                 disabled={applying || applied}
                 className="
-                  w-full bg-[#2A2E39] text-white font-semibold py-2 rounded-lg
-                  hover:bg-[#373f4d] transition disabled:opacity-50
-                "
+                   w-full bg-[#2A2E39] text-white font-semibold py-2 rounded-lg
+                   hover:bg-[#373f4d] transition disabled:opacity-50
+                 "
               >
                 {applying
                   ? '신청 중…'

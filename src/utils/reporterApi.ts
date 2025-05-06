@@ -2,8 +2,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { getSessionOrThrow } from '@/utils/auth';
 
-export type ApplicationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
-
 // 내 기자 신청 상태를 조회합니다.
 export async function fetchMyApplicationStatus(
   supabase: SupabaseClient,

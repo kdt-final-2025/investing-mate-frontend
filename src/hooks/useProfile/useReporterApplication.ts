@@ -1,8 +1,10 @@
+// src/hooks/useProfile/useReporterApplication.ts
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useAdminFlag } from './useAdminFlag';
+import { useReporterFlag } from './useReporterFlag';   // ①
 import {
   fetchMyApplicationStatus,
   applyForReporter,
@@ -13,6 +15,8 @@ export type ApplicationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 export function useReporterApplication() {
   const supabase = createClient();
   const { isAdmin, loading: loadingAdmin } = useAdminFlag();
+  const { isReporter, loading: loadingReporter } = useReporterFlag();  // ②
+
   const [status, setStatus] = useState<ApplicationStatus | null>(null);
   const [applying, setApplying] = useState(false);
   const [applied, setApplied] = useState(false);
@@ -21,9 +25,17 @@ export function useReporterApplication() {
   const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL!;
   const didFetch = useRef(false);
 
-  // 1) 내 신청 상태 조회
+  // 1) 내 신청 상태 조회 (관리자 또는 기자면 스킵)
   useEffect(() => {
-    if (loadingAdmin || isAdmin || didFetch.current) return;
+    if (
+        loadingAdmin ||
+        loadingReporter ||
+        isAdmin ||
+        isReporter ||
+        didFetch.current
+    ) {
+      return;
+    }
     didFetch.current = true;
 
     (async () => {
@@ -37,10 +49,21 @@ export function useReporterApplication() {
         console.error(e);
       }
     })();
-  }, [supabase, API_BASE, isAdmin, loadingAdmin]);
+  }, [
+    supabase,
+    API_BASE,
+    isAdmin,
+    loadingAdmin,
+    isReporter,
+    loadingReporter,
+  ]);
 
-  // 2) 신청 핸들러
+  // 2) 신청 핸들러 (관리자·기자는 호출 자체를 막아도 안전)
   const apply = async () => {
+    if (isAdmin || isReporter) {
+      // 혹은 throw new Error('권한 없음');
+      return;
+    }
     setApplying(true);
     setError(null);
     try {
@@ -58,6 +81,8 @@ export function useReporterApplication() {
   return {
     isAdmin,
     loadingAdmin,
+    isReporter,
+    loadingReporter,
     status,
     applying,
     applied,
