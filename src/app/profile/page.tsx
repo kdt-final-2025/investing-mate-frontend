@@ -8,7 +8,7 @@ import { useComments } from '@/hooks/useProfile/useComments';
 import { usePosts } from '@/hooks/useProfile/usePosts';
 import { useReporterApplication } from '@/hooks/useProfile/useReporterApplication';
 import { createClient } from '@/utils/supabase/client';
-import NavBar from "@/components/navBar";
+import NavBar from '@/components/navBar';
 
 export default function ProfilePage() {
   const supabase = createClient();
@@ -33,14 +33,13 @@ export default function ProfilePage() {
   return (
     <LoadingWrapper isLoading={isLoading} error={null}>
       <div className="min-h-screen bg-[#131722] text-white">
-
         {/* 네비게이션 */}
         {/* NavBar 컴포넌트로 교체 */}
 
         <NavBar
-            avatarUrl={avatarUrl}
-            userName={userName}
-            userEmail={userEmail}
+          avatarUrl={avatarUrl}
+          userName={userName}
+          userEmail={userEmail}
         />
 
         <div className="max-w-4xl mx-auto p-6 space-y-6">
