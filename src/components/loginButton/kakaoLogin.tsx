@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { createClient } from "@/utils/supabase/client";
+import { createClient } from '@/utils/supabase/client';
 
 const Kakaologin = async () => {
   const supabase = createClient();
 
   const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "kakao",
+    provider: 'kakao',
     options: {
       redirectTo: `${window.location.origin}/auth/callback`,
     },
@@ -21,7 +21,7 @@ const Kakaologin = async () => {
 
 export function KakaoLoginButton() {
   return (
-    <button type="button" onClick={Kakaologin} className="naver">
+    <button type="button" onClick={Kakaologin}>
       Kakao 로그인
     </button>
   );
