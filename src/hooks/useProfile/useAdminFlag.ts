@@ -14,7 +14,15 @@ export function useAdminFlag() {
     (async () => {
       try {
         // 1) 세션 가져오기
-        const session = await getSessionOrThrow(supabase);
+        const {
+          data: { session },
+          error: sessErr,
+        } = await supabase.auth.getSession();
+
+        if (sessErr || !session) {
+          // 로그인 안 됐으면 일반 사용자
+          return;
+        }
 
         // 2) 권한 조회 API 호출 (새 URL)
         const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL!;

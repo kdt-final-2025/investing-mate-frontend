@@ -3,7 +3,6 @@
 
 import Link from 'next/link';
 import LoadingWrapper from '@/components/LoadingWrapper';
-import NavBar from '@/components/navBar';
 import { createClient } from '@/utils/supabase/client';
 import { useUser } from '@/hooks/useProfile/useUser';
 import { useComments } from '@/hooks/useProfile/useComments';
@@ -39,12 +38,6 @@ export default function ProfilePage() {
   return (
     <LoadingWrapper isLoading={isLoading} error={null}>
       <div className="min-h-screen bg-[#131722] text-white">
-        <NavBar
-          avatarUrl={avatarUrl}
-          userName={userName}
-          userEmail={userEmail}
-        />
-
         <div className="max-w-4xl mx-auto p-6 space-y-6">
           {/* 프로필 헤더 */}
           <section className="bg-[#1E222D] rounded-lg p-6 space-y-4">
