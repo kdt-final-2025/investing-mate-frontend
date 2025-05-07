@@ -2,10 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useMarketData } from '@/hooks/useMarketData';
-import { useUser } from '@/hooks/useProfile/useUser';
 import LoadingWrapper from '@/components/LoadingWrapper';
-import { createClient } from '@/utils/supabase/client';
-import NavBar from "@/components/navBar";
 
 const TradingViewWidget = dynamic(
   () => import('@/components/ui/TradingViewWidget'),
@@ -19,27 +16,6 @@ const SYMBOL_DISPLAY: { [key: string]: string } = {
   'KRW=X': 'U',
   'BTC-KRW': 'B',
 };
-
-function formatNumber(num: number): string {
-  return new Intl.NumberFormat('ko-KR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(Math.abs(num));
-}
-
-function formatCurrency(num: number, symbol: string): string {
-  if (symbol === 'BTC-KRW' || symbol === 'KRW=X') {
-    return new Intl.NumberFormat('ko-KR', {
-      style: 'decimal',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(num);
-  }
-  return new Intl.NumberFormat('ko-KR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(num);
-}
 
 function formatChangePercent(num: number): string {
   if (isNaN(num) || num === 0) return '0.00';
@@ -68,20 +44,11 @@ function formatPrice(num: number, symbol: string): string {
 }
 
 export default function Page() {
-  const supabase = createClient();
   const { data: marketData, isLoading, error } = useMarketData();
-  const { userName, userEmail, avatarUrl } = useUser(supabase);
 
   return (
     <LoadingWrapper isLoading={isLoading} error={error}>
       <main className="min-h-screen bg-[#131722] text-white">
-        {/* NavBar 컴포넌트로 교체 */}
-        <NavBar
-            avatarUrl={avatarUrl}
-            userName={userName}
-            userEmail={userEmail}
-        />
-
         {/* 컨텐츠 영역 */}
         <div className="container mx-auto p-4">
           {/* 알림 */}

@@ -5,7 +5,7 @@ import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { signOutAction } from '@/utils/actions';
 import { useClickOutside } from '@/hooks/useProfile/useClickOutside';
-import { useAdminFlag } from '@/hooks/useProfile/useAdminFlag';
+import { useUserRole } from '@/hooks/useProfile/useUserRole';
 
 interface AvatarMenuProps {
   avatarUrl: string | null;
@@ -20,7 +20,8 @@ export default function AvatarMenu({
 }: AvatarMenuProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const { isAdmin, loading: loadingAdmin } = useAdminFlag();
+  const { role, loading: loadingRole } = useUserRole();
+  const isAdmin = role === 'ADMINISTRATOR';
 
   // 외부 클릭 시 메뉴 닫기
   useClickOutside(menuRef, () => setMenuOpen(false), menuOpen);
@@ -74,7 +75,7 @@ export default function AvatarMenu({
                   프로필 보기
                 </Link>
               </li>
-              {!loadingAdmin && isAdmin && (
+              {!loadingRole && isAdmin && (
                 <li>
                   <Link
                     href="/admin"
