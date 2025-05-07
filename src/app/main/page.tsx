@@ -1,15 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMarketData } from '@/hooks/useMarketData';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 
 const TradingViewWidget = dynamic(
   () => import('@/components/ui/TradingViewWidget'),
-  {
-    ssr: false,
-  }
+  { ssr: false }
 );
 
 // 심볼 표시를 위한 매핑
@@ -19,27 +17,6 @@ const SYMBOL_DISPLAY: { [key: string]: string } = {
   'KRW=X': 'U',
   'BTC-KRW': 'B',
 };
-
-function formatNumber(num: number): string {
-  return new Intl.NumberFormat('ko-KR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(Math.abs(num));
-}
-
-function formatCurrency(num: number, symbol: string): string {
-  if (symbol === 'BTC-KRW' || symbol === 'KRW=X') {
-    return new Intl.NumberFormat('ko-KR', {
-      style: 'decimal',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(num);
-  }
-  return new Intl.NumberFormat('ko-KR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(num);
-}
 
 function formatChangePercent(num: number): string {
   if (isNaN(num) || num === 0) return '0.00';
@@ -51,9 +28,9 @@ function formatChangePercent(num: number): string {
 
 function formatPrice(num: number, symbol: string): string {
   if (symbol === 'BTC-KRW') {
-    return new Intl.NumberFormat('ko-KR', {
-      maximumFractionDigits: 0,
-    }).format(num);
+    return new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 0 }).format(
+      num
+    );
   }
   if (symbol === 'KRW=X') {
     return new Intl.NumberFormat('ko-KR', {
@@ -67,9 +44,41 @@ function formatPrice(num: number, symbol: string): string {
   }).format(num);
 }
 
+// 추천 뉴스 타입 정의
+interface NewsResponse {
+  id: number;
+  title: string;
+  description: string;
+  imageUrls: string[];
+  publishedAt: string;
+}
+
 export default function Page() {
   const { data: marketData, isLoading, error } = useMarketData();
-  const [selectedTimeframe, setSelectedTimeframe] = useState('1m');
+
+  // 추천 뉴스 상태
+  const [newsList, setNewsList] = useState<NewsResponse[]>([]);
+  const [newsLoading, setNewsLoading] = useState(true);
+  const [newsError, setNewsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchNews = async () => {
+      setNewsLoading(true);
+      try {
+        const res = await fetch(
+          'http://localhost:8080/news?sortBy=publishedAt&order=desc&page=1&size=3'
+        );
+        if (!res.ok) throw new Error(`Error ${res.status}`);
+        const data = (await res.json()) as { responses: NewsResponse[] };
+        setNewsList(data.responses);
+      } catch (e) {
+        setNewsError((e as Error).message);
+      } finally {
+        setNewsLoading(false);
+      }
+    };
+    fetchNews();
+  }, []);
 
   if (isLoading) {
     return (
@@ -78,7 +87,6 @@ export default function Page() {
       </div>
     );
   }
-
   if (error) {
     return <div className="text-red-500 text-center">{error}</div>;
   }
@@ -89,56 +97,31 @@ export default function Page() {
       <nav className="bg-[#1E222D] border-b border-[#363A45]">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-8">
-              <Link href="/" className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold">R</span>
-                </div>
-                <span className="text-xl font-bold text-white">Red Light</span>
-              </Link>
-              <div className="flex space-x-6 max-md:hidden items-center">
-                <Link
-                  href="/class"
-                  className="text-gray-300 hover:text-white text-xs"
-                >
-                  더 클래스
-                </Link>
-                <Link
-                  href="/market"
-                  className="text-gray-300 hover:text-white text-xs"
-                >
-                  관심종목
-                </Link>
-                <Link
-                  href="/portfolio"
-                  className="text-gray-300 hover:text-white text-xs"
-                >
-                  포트폴리오
-                </Link>
-                <Link
-                  href="/realtime"
-                  className="text-gray-300 hover:text-white text-xs"
-                >
-                  실시간
-                </Link>
-                <Link
-                  href="/boards/"
-                  className="text-gray-300 hover:text-white text-xs"
-                >
-                  커뮤니티
-                </Link>
-                {/* 검색 입력 */}
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="주식, 가상자산 검색"
-                    className="bg-[#2A2E39] text-white px-4 py-2 rounded-lg w-64 focus:outline-none"
-                  />
-                  <span className="absolute right-3 top-2.5 text-gray-400">
-                    🔍
-                  </span>
-                </div>
+            <Link href="/" className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center">
+                <span className="text-white font-bold">R</span>
               </div>
+              <span className="text-xl font-bold text-white">Red Light</span>
+            </Link>
+            <div className="flex space-x-6 items-center">
+              <Link
+                href="/class"
+                className="text-gray-300 hover:text-white text-xs"
+              >
+                더 클래스
+              </Link>
+              <Link
+                href="/market"
+                className="text-gray-300 hover:text-white text-xs"
+              >
+                관심종목
+              </Link>
+              <Link
+                href="/realtime"
+                className="text-gray-300 hover:text-white text-xs"
+              >
+                실시간
+              </Link>
             </div>
             <div>
               <Link
@@ -166,63 +149,46 @@ export default function Page() {
 
         {/* 차트와 주요 종목 비교 영역 */}
         <div className="flex flex-col lg:flex-row gap-4 mb-6">
-          {/* 차트 영역 */}
-          <div className="bg-[#1E222D] rounded-lg p-4 lg:w-[65%]">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2"></div>
-              </div>
-              <div className="flex space-x-2"></div>
-            </div>
-            <div className="h-[350px]">
-              <TradingViewWidget />
-            </div>
+          <div className="bg-[#1E222D] rounded-lg p-4 lg:w-[65%] h-[350px]">
+            <TradingViewWidget />
           </div>
-
-          {/* 주요 종목 비교 */}
           <div className="bg-[#1E222D] rounded-lg p-4 lg:w-[35%]">
             <h2 className="text-xl font-bold mb-4">주요 종목 비교하기</h2>
             <div className="grid grid-cols-1 gap-4 max-h-[350px] overflow-y-auto">
               {marketData.map((data) => (
                 <div
                   key={data.symbol}
-                  className="relative bg-[#2A2E39] p-3 rounded-lg overflow-hidden group hover:shadow-lg transition-all duration-300"
+                  className="relative bg-[#2A2E39] p-3 rounded-lg group hover:shadow-lg transition-all duration-300"
                 >
-                  <div className="relative z-10">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
-                          {SYMBOL_DISPLAY[data.symbol] || data.symbol.charAt(0)}
-                        </div>
-                        <div>
-                          <h3 className="font-medium">
-                            {data.name || data.symbol}
-                          </h3>
-                          <span className="text-sm text-gray-400">
-                            {data.symbol}
-                          </span>
-                        </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
+                        {SYMBOL_DISPLAY[data.symbol] || data.symbol.charAt(0)}
                       </div>
-                      <div className="text-right">
-                        <div className="text-lg font-bold">
-                          {formatPrice(data.price, data.symbol)}
-                        </div>
-                        <div
-                          className={`text-sm ${
-                            data.change > 0
-                              ? 'text-green-500'
-                              : data.change < 0
-                                ? 'text-red-500'
-                                : 'text-gray-400'
-                          }`}
-                        >
-                          {data.change === 0
-                            ? '-'
-                            : data.change > 0
-                              ? '▲'
-                              : '▼'}{' '}
-                          {formatChangePercent(Math.abs(data.changePercent))}%
-                        </div>
+                      <div>
+                        <h3 className="font-medium text-sm">
+                          {data.name || data.symbol}
+                        </h3>
+                        <span className="text-xs text-gray-400">
+                          {data.symbol}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-lg font-bold">
+                        {formatPrice(data.price, data.symbol)}
+                      </div>
+                      <div
+                        className={`text-sm ${
+                          data.change > 0
+                            ? 'text-green-500'
+                            : data.change < 0
+                              ? 'text-red-500'
+                              : 'text-gray-400'
+                        }`}
+                      >
+                        {data.change > 0 ? '▲' : data.change < 0 ? '▼' : '-'}{' '}
+                        {formatChangePercent(data.changePercent)}%
                       </div>
                     </div>
                   </div>
@@ -232,26 +198,61 @@ export default function Page() {
           </div>
         </div>
 
-        {/* 뉴스 섹션 */}
+        {/* 추천 뉴스 섹션 */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold">오늘의 뉴스</h2>
-            <div className="flex space-x-2">
-              <button className="px-3 py-1 bg-[#2A2E39] rounded text-sm hover:bg-[#363B47]">
-                보유 종목
-              </button>
-              <button className="px-3 py-1 bg-[#2A2E39] rounded text-sm hover:bg-[#363B47]">
-                오늘의 Pick
-              </button>
-              <button className="px-3 py-1 bg-[#2A2E39] rounded text-sm hover:bg-[#363B47]">
-                추천 뉴스
-              </button>
-            </div>
+            <h2 className="text-xl font-bold">추천 뉴스</h2>
+            <Link
+              href="/news"
+              className="text-sm text-blue-400 hover:underline"
+            >
+              전체 보기 →
+            </Link>
           </div>
-          <div className="bg-[#1E222D] rounded-lg p-4">
-            <div className="text-center text-gray-400">
-              관련 뉴스가 없습니다.
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {newsLoading && (
+              <p className="col-span-full text-center text-gray-400">
+                로딩 중...
+              </p>
+            )}
+            {newsError && (
+              <p className="col-span-full text-center text-red-500">
+                {newsError}
+              </p>
+            )}
+            {!newsLoading && newsList.length === 0 && (
+              <p className="col-span-full text-center text-gray-400">
+                추천 뉴스가 없습니다.
+              </p>
+            )}
+            {newsList.map((n) => (
+              <article
+                key={n.id}
+                className="bg-[#2A2E39] rounded-lg overflow-hidden flex flex-col hover:shadow-lg transition-shadow duration-300"
+              >
+                {n.imageUrls[0] && (
+                  <img
+                    src={n.imageUrls[0]}
+                    alt={n.title}
+                    className="w-full h-32 object-cover"
+                  />
+                )}
+                <div className="p-4 flex flex-col flex-1">
+                  <h3 className="text-sm font-semibold mb-2 line-clamp-2">
+                    {n.title}
+                  </h3>
+                  <p className="text-xs text-gray-400 mb-2">
+                    {new Date(n.publishedAt).toLocaleDateString()}
+                  </p>
+                  <Link
+                    href={`/news/${n.id}`}
+                    className="mt-auto text-blue-400 hover:underline text-xs"
+                  >
+                    더보기 →
+                  </Link>
+                </div>
+              </article>
+            ))}
           </div>
         </div>
       </div>
