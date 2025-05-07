@@ -4,9 +4,9 @@
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
-
 import LoadingWrapper from '@/components/LoadingWrapper';
 import { useUserRole } from '@/hooks/useProfile/useUserRole';
+import { API_BASE } from '@/service/baseAPI';
 
 interface ApplicationResponse {
   applicationId: number;
@@ -26,7 +26,6 @@ export default function ReporterApplicationPage() {
   const [selected, setSelected] = useState<number[]>([]);
   // ➊ 필터 상태: ALL, PENDING, REJECTED
   const [filter, setFilter] = useState<'ALL' | 'PENDING' | 'REJECTED'>('ALL');
-  const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
   const fetchApps = async () => {
     const {
