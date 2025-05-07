@@ -26,6 +26,7 @@ export async function togglePostLike(postId: string, liked: boolean) {
   });
   return res.ok;
 }
+
 // 좋아요한 게시글 불러오기
 export async function fetchLikedPosts(pageNumber: number = 0) {
   const res = await fetch(
