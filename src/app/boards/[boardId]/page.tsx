@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { fetchPosts, Post } from '@/service/posts';
+import { fetchPostListAndPaging, Post } from '@/service/posts';
 import { PostListClient } from '@/components/posts/PostList';
 
 interface PageProps {
@@ -7,26 +7,28 @@ interface PageProps {
 }
 
 export default async function BoardPostsPage({ params }: PageProps) {
-  // 1) params를 await 해서 boardId를 꺼내고
   const { boardId } = await params;
-
-  // 2) 그 boardId로 최초 1페이지만 미리 받아오기
-  const initialPosts: Post[] = await fetchPosts(boardId, 1);
+  const { boardName, postListResponse: initialPosts } =
+    await fetchPostListAndPaging(boardId, 1);
 
   return (
     <main className="min-h-screen bg-[#131722] text-white p-8">
-      <h1 className="text-3xl font-bold mb-6">게시판 {boardId}의 게시글</h1>
-
-      {/* 3) PostListClient에 initialPosts를 반드시 넘겨야 합니다. */}
-      <PostListClient initialPosts={initialPosts} boardId={boardId} />
-
-      <div className="mt-6">
-        <Link href="/boards">
-          <button className="px-4 py-2 bg-[#3b4754] rounded hover:bg-[#4a5b68]">
-            ← 게시판 목록으로
-          </button>
-        </Link>
+      {/* 제목과 버튼을 같은 컨테이너에서 상대 위치로 배치 */}
+      <div className="relative mb-6">
+        {/* 왼쪽 상단: 뒤로가기 링크 */}
+        <div className="absolute left-0 top-0">
+          <Link href="/boards">
+            <span className="text-white hover:underline cursor-pointer">
+              ← 게시판 목록
+            </span>
+          </Link>
+        </div>
+        {/* 가운데 제목 */}
+        <h1 className="text-3xl font-bold text-center">{boardName}</h1>
       </div>
+
+      {/* 게시글 목록 */}
+      <PostListClient initialPosts={initialPosts} boardId={boardId} />
     </main>
   );
 }

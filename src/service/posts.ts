@@ -50,7 +50,8 @@ export interface PostsLikedAndPagingResponse {
   pageInfo: Page;
 }
 
-export async function fetchPosts(
+//게시글 목록 + 페이징 + 보드명까지 모두 내려받는 함수
+export async function fetchPostListAndPaging(
   boardId: string,
   pageNumber = 1,
   size = 10,
@@ -58,7 +59,7 @@ export async function fetchPosts(
   userId?: string,
   sortBy = 'NEWEST',
   direction = 'DESC'
-): Promise<Post[]> {
+): Promise<PostListAndPagingResponse> {
   const params = new URLSearchParams({
     boardId,
     pageNumber: String(pageNumber),
@@ -73,8 +74,9 @@ export async function fetchPosts(
     cache: 'no-store',
   });
   if (!res.ok) throw new Error('게시글 목록 조회 실패');
-  const json: PostListAndPagingResponse = await res.json();
-  return json.postListResponse;
+
+  // 전체 JSON 응답을 그대로 반환
+  return (await res.json()) as PostListAndPagingResponse;
 }
 
 export async function fetchPostDetail(postId: string) {
