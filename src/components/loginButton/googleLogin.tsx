@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { createClient } from "@/utils/supabase/client";
+import { createClient } from '@/utils/supabase/client';
 
 const GoogleLogin = async () => {
   const supabase = createClient();
@@ -25,7 +25,7 @@ const GoogleLogin = async () => {
 
 export function GoogleLoginButton() {
   return (
-    <button type="button" onClick={GoogleLogin} className="google">
+    <button type="button" onClick={GoogleLogin}>
       Google 로그인
     </button>
   );
