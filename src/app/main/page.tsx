@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { useMarketData } from '@/hooks/useMarketData';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import LoadingWrapper from '@/components/LoadingWrapper';
+import { useNews } from '@/hooks/useNews';
 
 const TradingViewWidget = dynamic(
   () => import('@/components/ui/TradingViewWidget'),
@@ -58,28 +58,11 @@ export default function Page() {
   const { data: marketData, isLoading, error } = useMarketData();
 
   // 추천 뉴스 상태
-  const [newsList, setNewsList] = useState<NewsResponse[]>([]);
-  const [newsLoading, setNewsLoading] = useState(true);
-  const [newsError, setNewsError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchNews = async () => {
-      setNewsLoading(true);
-      try {
-        const res = await fetch(
-          'http://localhost:8080/news?sortBy=publishedAt&order=desc&page=1&size=3'
-        );
-        if (!res.ok) throw new Error(`Error ${res.status}`);
-        const data = (await res.json()) as { responses: NewsResponse[] };
-        setNewsList(data.responses);
-      } catch (e) {
-        setNewsError((e as Error).message);
-      } finally {
-        setNewsLoading(false);
-      }
-    };
-    fetchNews();
-  }, []);
+  const {
+    data: newsData,
+    loading: newsLoading,
+    error: newsError,
+  } = useNews('추천 뉴스', 1, 3, 'publishedAt', 'desc');
 
   if (isLoading) {
     return (
@@ -180,12 +163,12 @@ export default function Page() {
                   {newsError}
                 </p>
               )}
-              {!newsLoading && newsList.length === 0 && (
+              {!newsLoading && newsData?.responses.length === 0 && (
                 <p className="col-span-full text-center text-gray-400">
                   추천 뉴스가 없습니다.
                 </p>
               )}
-              {newsList.map((n) => (
+              {newsData?.responses.map((n) => (
                 <article
                   key={n.id}
                   className="bg-[#2A2E39] rounded-lg overflow-hidden flex flex-col hover:shadow-lg transition-shadow duration-300"
