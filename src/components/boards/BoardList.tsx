@@ -1,3 +1,4 @@
+// src/components/boards/BoardList.tsx
 'use client';
 import Link from 'next/link';
 import type { Board } from '@/service/boards';
@@ -10,10 +11,10 @@ export function BoardList({ boards }: { boards: Board[] }) {
         {boards.map((board) => (
           <Link
             key={board.id}
-            href={`/boards/${board.id}/posts`}
-            className="block p-6 bg-[#1E222D] rounded-2xl shadow hover:shadow-lg transition"
+            href={`/boards/${board.id}`}
+            className="group block p-6 bg-[#1E222D] rounded-2xl shadow hover:shadow-lg transition"
           >
-            <h2 className="text-xl font-semibold text-white">
+            <h2 className="text-xl font-semibold text-white group-hover:underline">
               {board.boardName}
             </h2>
             <p className="text-sm text-gray-400 mt-2">
