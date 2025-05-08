@@ -4,6 +4,29 @@ import { createClient } from '@/utils/supabase/client';
 import { getSessionOrThrow } from '@/utils/auth';
 
 // API 응답 예시 스펙에 맞춘 타입 정의
+export type Post = {
+  id: number;
+  postTitle: string;
+  userId: string;
+  viewCount: number;
+  commentCount: number;
+  likeCount: number;
+  createdAt: string;
+};
+
+interface PageInfo {
+  pageNumber: number;
+  size: number;
+  totalPages: number;
+  totalElements: number;
+}
+
+interface PostListAndPagingResponse {
+  boardName: string;
+  postListResponse: Post[];
+  pageInfo: PageInfo;
+}
+
 export interface PostsLikedResponse {
   boardId: number;
   boardName: string;
@@ -27,16 +50,31 @@ export interface PostsLikedAndPagingResponse {
   pageInfo: Page;
 }
 
-export async function fetchPosts(boardId: string, pageNumber: number = 0) {
-  const res = await fetch(
-    `${API_URL}/posts?boardId=${boardId}&sortBy=createdAt&direction=desc&pageNumber=${pageNumber}&size=10`,
-    {
-      headers: { Authorization: 'Bearer your_token_here' },
-      cache: 'no-store',
-    }
-  );
-  const data = await res.json();
-  return data.PostListDto;
+export async function fetchPosts(
+  boardId: string,
+  pageNumber = 1,
+  size = 10,
+  postTitle?: string,
+  userId?: string,
+  sortBy = 'NEWEST',
+  direction = 'DESC'
+): Promise<Post[]> {
+  const params = new URLSearchParams({
+    boardId,
+    pageNumber: String(pageNumber),
+    size: String(size),
+    sortBy,
+    direction,
+  });
+  if (postTitle) params.append('postTitle', postTitle);
+  if (userId) params.append('userId', userId);
+
+  const res = await fetch(`${API_BASE}/posts?${params.toString()}`, {
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new Error('게시글 목록 조회 실패');
+  const json: PostListAndPagingResponse = await res.json();
+  return json.postListResponse;
 }
 
 export async function fetchPostDetail(postId: string) {
@@ -58,7 +96,6 @@ export async function togglePostLike(postId: string, liked: boolean) {
 export async function fetchLikedPosts(
   pageNumber: number = 0
 ): Promise<PostsLikedAndPagingResponse> {
-
   // 1) Supabase 세션에서 토큰 가져오기
   const supabase = createClient();
   const session = await getSessionOrThrow(supabase);

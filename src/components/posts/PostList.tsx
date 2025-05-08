@@ -20,24 +20,21 @@ interface Props {
 
 export function PostListClient({ initialPosts, boardId }: Props) {
   const [posts, setPosts] = useState<Post[]>(initialPosts);
-  const [page, setPage] = useState(1); // 첫 페이지는 이미 불러왔으니까 1로 시작
+  const [page, setPage] = useState(2); // 첫 페이지는 이미 불러왔으니까 1로 시작
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
 
   const loadMore = async () => {
     if (isLoading) return;
-
     setIsLoading(true);
     try {
       const newPosts = await fetchPosts(boardId, page);
-      if (newPosts.length === 0) {
+      if (!newPosts.length) {
         setHasMore(false);
         return;
       }
       setPosts((prev) => [...prev, ...newPosts]);
       setPage((prev) => prev + 1);
-    } catch (error) {
-      console.error('게시글을 불러오는데 실패했습니다', error);
     } finally {
       setIsLoading(false);
     }
@@ -55,7 +52,7 @@ export function PostListClient({ initialPosts, boardId }: Props) {
         <div className="flex justify-center mt-6">
           <button
             onClick={loadMore}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white text-sm"
+            className="px-4 py-2 bg-[#3b4754] hover:bg-[#4a5b68] rounded-lg text-white text-sm transition"
             disabled={isLoading}
           >
             {isLoading ? '로딩 중...' : '더 보기'}
