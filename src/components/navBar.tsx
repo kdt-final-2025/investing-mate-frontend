@@ -53,7 +53,7 @@ export default function NavBar({
               실시간
             </Link>
             <Link
-              href="/community"
+              href="/boards"
               className="text-gray-300 hover:text-white text-xs"
             >
               커뮤니티
