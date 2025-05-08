@@ -119,25 +119,31 @@ export default function ProfilePage() {
             </section>
 
             <section className="bg-[#1E222D] rounded-lg p-6 space-y-4">
-              <h2 className="text-xl font-semibold">내 게시글</h2>
+              <h2 className="text-xl font-semibold">좋아요한 게시글 목록</h2>
               {loadingPosts ? (
                 <p className="text-gray-400">불러오는 중…</p>
-              ) : posts.length > 0 ? (
+              ) : posts && posts.length > 0 ? (
                 posts.map((p) => (
-                  <div key={p.id} className="border-b border-gray-700 pb-2">
+                  <div
+                    key={p.boardId}
+                    className="border-b border-gray-700 pb-2"
+                  >
                     <Link
-                      href={`/posts/${p.id}`}
+                      href={`/posts/${p.boardId}`} // postId 대신 boardId 사용
                       className="font-medium hover:underline"
                     >
-                      {p.title}
+                      {p.postTitle} {/* PostsLikedResponse.postTitle */}
                     </Link>
-                    <time className="text-xs text-gray-500 block">
-                      {new Date(p.createdAt).toLocaleString()}
-                    </time>
+                    <div className="text-xs text-gray-500 mt-1">
+                      <span>{new Date(p.createdAt).toLocaleString()}</span>
+                      <span className="ml-2">💬 {p.commentCount}</span>
+                      <span className="ml-2">👍 {p.likeCount}</span>
+                      <span className="ml-2">👁️ {p.viewCount}</span>
+                    </div>
                   </div>
                 ))
               ) : (
-                <p className="text-gray-400">작성한 게시글이 없습니다.</p>
+                <p className="text-gray-400">좋아요한 게시글이 없습니다.</p>
               )}
             </section>
           </div>
