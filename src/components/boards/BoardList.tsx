@@ -1,12 +1,20 @@
-// src/components/boards/BoardList.tsx
 'use client';
 import Link from 'next/link';
 import type { Board } from '@/service/boards';
 
 export function BoardList({ boards }: { boards: Board[] }) {
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold text-white mb-4">게시판 목록</h1>
+    <div className="container mx-auto p-4 relative">
+      {/* 제목 및 추가 버튼 영역 */}
+      <div className="relative mb-6">
+        <h1 className="text-2xl font-bold text-white">게시판 목록</h1>
+        <Link href="/boards/new">
+          <span className="absolute top-0 right-0 text-white text-3xl transition hover:text-gray-300 hover:drop-shadow-md cursor-pointer">
+            +
+          </span>
+        </Link>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {boards.map((board) => (
           <Link

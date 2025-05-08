@@ -1,5 +1,6 @@
-import { API_URL } from '@/env/constants';
+import { getSessionOrThrow } from '@/utils/auth';
 import { API_BASE } from '@/service/baseAPI';
+import { createClient } from '@/utils/supabase/client';
 
 export interface Board {
   id: number;
@@ -7,17 +8,39 @@ export interface Board {
   postCount: number;
 }
 
+export interface CreateBoardRequest {
+  boardName: string;
+}
+
+export interface BoardResponse {
+  id: number;
+  boardName: string;
+  postCount: number;
+}
+
 // 게시판 생성
-export async function createBoard(boardName: string, token: string) {
-  const res = await fetch(`${API_URL}/boards`, {
+export async function createBoard(
+  request: CreateBoardRequest
+): Promise<BoardResponse> {
+  // 유저 토큰 가져오기 (로그인 필요)
+  const supabase = createClient();
+  const session = await getSessionOrThrow(supabase);
+  const token = session.access_token;
+
+  const res = await fetch(`${API_BASE}/boards`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ boardName }),
+    body: JSON.stringify(request), // <-- 객체 자체를 직렬화
+    cache: 'no-store',
   });
-  if (!res.ok) throw new Error('게시판 생성 실패');
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`게시판 생성 실패: ${res.status} ${text}`);
+  }
   return res.json();
 }
 
@@ -28,7 +51,6 @@ export async function getBoards(): Promise<Board[]> {
     cache: 'no-store',
   });
   if (!res.ok) throw new Error('게시판 목록 조회 실패');
-  // JSON이 [ { id:…, boardName:…, postCount:… }, … ] 형태라고 가정
   const data: Board[] = await res.json();
   return data;
 }

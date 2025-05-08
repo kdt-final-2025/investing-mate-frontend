@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { fetchPostListAndPaging, Post } from '@/service/posts';
+import { fetchPostListAndPaging } from '@/service/posts';
 import { PostListClient } from '@/components/posts/PostList';
 
 interface PageProps {
