@@ -1,3 +1,5 @@
+// src/service/posts.ts
+
 import { API_URL } from '@/env/constants';
 import { API_BASE } from '@/service/baseAPI';
 import { createClient } from '@/utils/supabase/client';
@@ -14,6 +16,28 @@ export type Post = {
   createdAt: string;
 };
 
+//게시글 생성
+export interface CreatePostRequest {
+  boardId: number;
+  postTitle: string;
+  content: string;
+  imageUrls: string[];
+}
+
+export interface PostResponse {
+  id: number;
+  boardId: number;
+  postTitle: string;
+  content: string;
+  imageUrls: string[];
+  userId: string;
+  viewCount: number;
+  commentCount: number;
+  likeCount: number;
+  createdAt: string;
+}
+
+//게시글 조회
 interface PageInfo {
   pageNumber: number;
   size: number;
@@ -27,6 +51,7 @@ interface PostListAndPagingResponse {
   pageInfo: PageInfo;
 }
 
+//좋아요 조회
 export interface PostsLikedResponse {
   boardId: number;
   boardName: string;
@@ -48,6 +73,31 @@ export interface Page {
 export interface PostsLikedAndPagingResponse {
   likedPostsResponse: PostsLikedResponse[];
   pageInfo: Page;
+}
+
+export async function createPost(
+  request: CreatePostRequest
+): Promise<PostResponse> {
+  // 유저 토큰 가져오기 (로그인 필요)
+  const supabase = createClient();
+  const session = await getSessionOrThrow(supabase);
+  const token = session.access_token;
+
+  const res = await fetch(`${API_BASE}/posts`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(request),
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    throw new Error('게시물 생성에 실패했습니다.');
+  }
+
+  return await res.json();
 }
 
 //게시글 목록 + 페이징 + 보드명까지 모두 내려받는 함수

@@ -1,3 +1,4 @@
+// src/app/boards/new/page.tsx
 import CreateBoardForm from '@/components/boards/CreateBoardForm';
 
 export default function CreateBoardPage() {

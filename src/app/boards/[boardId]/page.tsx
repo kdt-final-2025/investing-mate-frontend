@@ -1,3 +1,4 @@
+// src/app/boards/[boardId]/page.tsx
 import Link from 'next/link';
 import { fetchPostListAndPaging } from '@/service/posts';
 import { PostListClient } from '@/components/posts/PostList';
