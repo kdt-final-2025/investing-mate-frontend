@@ -1,18 +1,9 @@
+// src/components/posts/PostList.tsx
 'use client';
 
-import { useState } from 'react';
-import { fetchPostListAndPaging } from '@/service/posts';
 import { PostItemClient } from './PostItem';
-
-// Post 타입 정의 (API 스펙과 일치)
-type Post = {
-  id: number;
-  postTitle: string;
-  userId: string;
-  viewCount: number;
-  commentCount: number;
-  likeCount: number;
-};
+import type { Post } from '@/service/posts';
+import { usePostList } from '@/hooks/usePostList';
 
 interface Props {
   initialPosts: Post[];
@@ -20,50 +11,26 @@ interface Props {
 }
 
 export function PostListClient({ initialPosts, boardId }: Props) {
-  const [posts, setPosts] = useState<Post[]>(initialPosts);
-  const [page, setPage] = useState(2); // 첫 페이지는 이미 불러왔으니 다음 페이지 번호로 초기화
-  const [hasMore, setHasMore] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const loadMore = async () => {
-    if (isLoading) return;
-    setIsLoading(true);
-
-    try {
-      // 전체 응답에서 게시글 배열만 꺼내기
-      const { postListResponse: newPosts } = await fetchPostListAndPaging(
-        boardId,
-        page
-      );
-
-      if (newPosts.length === 0) {
-        setHasMore(false);
-        return;
-      }
-
-      setPosts((prev) => [...prev, ...newPosts]);
-      setPage((prev) => prev + 1);
-    } catch (error) {
-      console.error('게시글을 불러오는데 실패했습니다', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // 커스텀 훅으로 로직 분리, UI 디자인 유지
+  const { posts, hasMore, isLoading, loadMore } = usePostList(
+    boardId,
+    initialPosts
+  );
 
   return (
     <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold text-white mb-4">게시글 목록</h1>
       <div className="space-y-4">
         {posts.map((post) => (
           <PostItemClient key={post.id} post={post} />
         ))}
       </div>
-
       {hasMore && (
         <div className="flex justify-center mt-6">
           <button
             onClick={loadMore}
-            className="px-4 py-2 bg-[#3b4754] hover:bg-[#4a5b68] rounded-lg text-white text-sm transition"
             disabled={isLoading}
+            className="px-4 py-2 bg-[#3b4754] hover:bg-[#4a5b68] rounded-lg text-white text-sm transition"
           >
             {isLoading ? '로딩 중...' : '더 보기'}
           </button>
