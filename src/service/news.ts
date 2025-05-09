@@ -7,9 +7,13 @@ export interface NewsResponse {
   description: string;
   imageUrls: string[];
   publishedAt: string;
+  viewCount: number;
 }
+
 export interface NewsListResponse {
   responses: NewsResponse[];
+  currentPage: number;
+  totalPage: number;
 }
 
 interface GetNewsParams {
@@ -33,4 +37,12 @@ export async function getNews({ title, page, size, sortBy, order }: GetNewsParam
     throw new Error(`Error fetching news: ${res.status}`);
   }
   return (await res.json()) as NewsListResponse;
+}
+
+export async function getNewsById(id: string): Promise<NewsResponse> {
+  const res = await fetch(`${API_BASE}/news/${id}`);
+  if (!res.ok) {
+    throw new Error(`Error fetching news detail: ${res.status}`);
+  }
+  return res.json() as Promise<NewsResponse>;
 }
