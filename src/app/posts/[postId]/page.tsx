@@ -1,37 +1,22 @@
-import { fetchPostDetail } from '@/service/posts';
+// src/app/posts/[postId]/page.tsx
 import PostDetailClient from '@/components/posts/PostDetailClient';
-import type { Metadata } from 'next';
+import { getPost } from '@/service/posts';
+
 
 interface Props {
-  params: { postId: string };
-}
-
-// 동적 메타데이터 생성 (SEO 최적화)
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { postId } = params;
-  const post = await fetchPostDetail(postId);
-
-  return {
-    title: post.postTitle,
-    description: post.content.substring(0, 160), // 첫 160자를 설명으로 사용
-  };
+  params: Promise<{ postId: string }>;
 }
 
 export default async function PostDetailPage({ params }: Props) {
-  const { postId } = params;
-
-  // 서버에서 데이터 가져오기 (SSR)
-  const post = await fetchPostDetail(postId);
+  const { postId } = await params;
+  const post = await getPost(Number(postId));
 
   return (
     <div className="min-h-screen bg-[#131722] text-white container mx-auto p-6">
-      <div className="bg-[#1E222D] p-6 rounded-2xl shadow-md">
-        <h1 className="text-2xl font-bold mb-4">{post.postTitle}</h1>
-        <p className="whitespace-pre-wrap mb-6">{post.content}</p>
-
-        {/* 클라이언트 컴포넌트로 인터랙션 부분만 분리 */}
-        <PostDetailClient initialPost={post} postId={postId} />
+      <div className="relative mb-6">
+        <h1 className="text-3xl font-bold text-center">{post.postTitle}</h1>
       </div>
+      <PostDetailClient postId={postId} initialPost={post} />
     </div>
   );
 }

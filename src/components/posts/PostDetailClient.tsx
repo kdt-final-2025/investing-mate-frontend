@@ -1,55 +1,47 @@
+// src/components/posts/PostDetailClient.tsx
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { togglePostLike } from '@/service/posts';
-import { API_URL } from '@/env/constants';
+import type { PostResponse } from '@/types/posts';
+import { deletePost, toggleLike, updatePost } from '@/service/posts';
 
-interface PostProps {
-  initialPost: {
-    postTitle: string;
-    content: string;
-    likedByMe: boolean;
-    // 기타 필요한 속성
-  };
+
+interface Props {
+  initialPost: PostResponse;
   postId: string;
 }
 
-export default function PostDetailClient({ initialPost, postId }: PostProps) {
-  const [liked, setLiked] = useState(initialPost.likedByMe);
+export default function PostDetailClient({ initialPost, postId }: Props) {
+  const [liked, setLiked] = useState<boolean>(initialPost.likeCount > 0);
+  const [likeCount, setLikeCount] = useState<number>(initialPost.likeCount);
   const [isEditing, setIsEditing] = useState(false);
   const [postTitle, setPostTitle] = useState(initialPost.postTitle);
   const [content, setContent] = useState(initialPost.content);
   const router = useRouter();
 
   const handleToggleLike = async () => {
-    const success = await togglePostLike(postId, liked);
-    if (success) setLiked((prev) => !prev);
+    const { liked: newLiked, likeCount: newCount } = await toggleLike(
+      Number(postId)
+    );
+    setLiked(newLiked);
+    setLikeCount(newCount);
   };
 
   const handleEdit = async () => {
-    const res = await fetch(`${API_URL}/posts/${postId}`, {
-      method: 'PUT',
-      headers: {
-        Authorization: 'Bearer your_token_here',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ postTitle, content, imageUrls: [] }),
+    await updatePost(Number(postId), {
+      boardId: initialPost.boardId,
+      postTitle,
+      content,
+      imageUrls: initialPost.imageUrls,
     });
-    if (res.ok) {
-      alert('수정 완료');
-      setIsEditing(false);
-      router.refresh(); // 페이지 데이터 갱신
-    } else alert('수정 실패');
+    setIsEditing(false);
+    router.refresh();
   };
 
   const handleDelete = async () => {
-    const res = await fetch(`${API_URL}/posts/${postId}`, {
-      method: 'DELETE',
-      headers: { Authorization: 'Bearer your_token_here' },
-    });
-    if (res.ok) router.push('/posts');
-    else alert('삭제 실패');
+    await deletePost(Number(postId));
+    router.push('/posts');
   };
 
   return (
@@ -88,7 +80,7 @@ export default function PostDetailClient({ initialPost, postId }: PostProps) {
             onClick={handleToggleLike}
             className="px-4 py-1 bg-[#2A2E39] hover:bg-[#363B47] rounded-lg text-sm"
           >
-            {liked ? '좋아요 취소' : '좋아요'}
+            {liked ? `좋아요 취소 (${likeCount})` : `좋아요 (${likeCount})`}
           </button>
           <button
             onClick={() => setIsEditing(true)}
