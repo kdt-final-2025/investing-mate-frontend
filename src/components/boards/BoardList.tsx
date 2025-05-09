@@ -1,6 +1,4 @@
 // src/components/boards/BoardList.tsx
-'use client';
-
 import Link from 'next/link';
 import type { Board } from '@/service/boards';
 
