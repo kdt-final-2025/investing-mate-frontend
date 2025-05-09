@@ -1,7 +1,7 @@
 // src/components/posts/PostList.tsx
 'use client';
 
-import type { Post, Page } from '@/service/posts';
+import type { PostListResponse as Post, PageInfo as Page } from '@/types/posts';
 import { usePostList } from '@/hooks/usePostList';
 import { PostItemClient } from '@/components/posts/PostItem';
 

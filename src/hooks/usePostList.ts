@@ -1,6 +1,7 @@
 // src/hooks/usePostList.ts
 import { useState, useCallback } from 'react';
-import { fetchPostListAndPaging, Post, Page } from '@/service/posts';
+import { fetchPostList } from '@/service/posts';
+import type { PostListResponse as Post, PageInfo as Page } from '@/types/posts';
 
 export function usePostList(
   boardId: string,
@@ -16,12 +17,17 @@ export function usePostList(
       if (isLoading || pageNumber === pageInfo.pageNumber) return;
       setIsLoading(true);
       try {
-        const { postListResponse: newPosts, pageInfo: newPageInfo } =
-          await fetchPostListAndPaging(boardId, pageNumber, pageInfo.size);
-        setPosts(newPosts);
+        const { postListResponse, pageInfo: newPageInfo } = await fetchPostList(
+          {
+            boardId: parseInt(boardId, 10),
+            pageNumber,
+            size: pageInfo.size,
+          }
+        );
+        setPosts(postListResponse);
         setPageInfo(newPageInfo);
-      } catch (e) {
-        console.error('페이지 로드 실패', e);
+      } catch (error) {
+        console.error(error);
       } finally {
         setIsLoading(false);
       }
