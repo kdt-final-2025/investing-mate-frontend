@@ -1,89 +1,105 @@
 import axios from 'axios';
 import { API_URL } from '@/env/constants';
-// 댓글 및 대댓글 인터페이스 추가
+import { createClient } from '@/utils/supabase/client';
+import {
+  CommentResponse,
+  CreateCommentRequest,
+  Pagemeta,
+  CommentResponseAndPaging,
+  CommentLikeResponse,
+  Comment,
+  PaginatedCommentResponse,
+} from '@/types/comments';
+import { getSessionOrThrow } from '@/utils/auth';
 
-export interface Comment {
-  id: number;
-  content: string;
-  author: string;
-  createdAt: string;
-  likeCount: number;
-  likedByMe: boolean;
-  parentId?: number;
-  replies?: Comment[]; // 대댓글 배열
+/**
+ * 좋아요순 또는 최신순 정렬된 댓글+대댓글 조회 (페이징 포함)
+ * 백엔드: GET /comments/likes
+ */
+
+// 댓글 생성 (대댓글 포함)
+export async function createComment(
+  request: CreateCommentRequest
+): Promise<CommentResponse> {
+  const supabase = createClient();
+  const session = await getSessionOrThrow(supabase);
+  const token = session.access_token;
+  const res = await axios.post(`${API_URL}/comments`, {
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(request),
+    cache: 'no-store',
+  });
+  return res.data;
 }
-export interface PaginatedCommentResponse {
-  totalPage: number;
-  totalCount: number;
-  pageNumber: number;
-  pageSize: number;
-  items: Comment[];
-}
-export async function fetchPaginatedComments(
-  boardId: string,
-  postId: string,
-  page: number
-): Promise<PaginatedCommentResponse> {
-  const res = await axios.get(
-    `${API_URL}/${boardId}/posts/${postId}/comments`,
+
+//댓글 수정
+export async function updateComment(
+  commentId: string,
+  request: CreateCommentRequest
+): Promise<void> {
+  const supabase = createClient();
+  const session = await getSessionOrThrow(supabase);
+  const token = session.access_token;
+  const res = await axios.put(
+    `${API_URL}/comments/${parseInt(commentId)}}`,
+    request,
     {
-      params: { page },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
     }
   );
   return res.data;
 }
 
-// 댓글 및 대댓글 fetch, 생성, 삭제, 업데이트 함수들
-export async function fetchAllComments(
-  boardId: string,
-  postId: string
-): Promise<Comment[]> {
-  const res = await axios.get(`${API_URL}/${boardId}/posts/${postId}/comments`);
-  return res.data;
-}
-
-export async function createComment(
-  boardId: string,
-  postId: string,
-  content: string,
-  parentId?: number // 대댓글을 위한 parentId
-): Promise<Comment> {
-  const res = await axios.post(
-    `${API_URL}/${boardId}/posts/${postId}/comments`,
-    { content, parentId }
-  );
-  return res.data;
-}
-
+// 댓글 삭제
 export async function deleteComment(
-  boardId: string,
-  postId: string,
-  commentId: number
+  userId: string,
+  commentId: string
 ): Promise<void> {
-  await axios.delete(
-    `${API_URL}/${boardId}/posts/${postId}/comments/${commentId}`
-  );
-}
-
-export async function updateComment(
-  boardId: string,
-  postId: string,
-  commentId: number,
-  content: string
-): Promise<Comment> {
-  const res = await axios.patch(
-    `${API_URL}/${boardId}/posts/${postId}/comments/${commentId}`,
-    { content }
-  );
+  const supabase = createClient();
+  const session = await getSessionOrThrow(supabase);
+  const token = session.access_token;
+  const res = await axios.delete(`${API_URL}/${commentId}`, {
+    headers: {
+      Authorization: userId,
+    },
+  });
   return res.data;
 }
+
+// 댓글 수정
+export async function updxateComment(
+  userId: string,
+  postId: number,
+  parentId: number | undefined,
+  commentId: number,
+  request: CreateCommentRequest
+): Promise<Comment> {
+  const res = await axios.patch(`${API_URL}${commentId}`, {
+    postId,
+    parentId,
+    headers: {
+      Authorization: userId,
+    },
+    body: JSON.stringify(request),
+  });
+  return res.data;
+}
+
+// 댓글 좋아요 토글
 export async function likeComment(
-  boardId: string,
-  postId: string,
+  userId: string,
   commentId: number
 ): Promise<{ likeCount: number; likedByMe: boolean }> {
-  const res = await axios.post(
-    `${API_URL}/${boardId}/posts/${postId}/comments/${commentId}/like`
-  );
+  const res = await axios.post(`${API_URL}/comments/${commentId}/likes`, {
+    headers: {
+      Authorization: userId,
+    },
+  });
   return res.data;
 }
