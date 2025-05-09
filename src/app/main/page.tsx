@@ -92,69 +92,29 @@ export default function Page() {
   }
 
   return (
-    <main className="min-h-screen bg-[#131722] text-white">
-      {/* 네비게이션 바 */}
-      <nav className="bg-[#1E222D] border-b border-[#363A45]">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold">R</span>
-              </div>
-              <span className="text-xl font-bold text-white">Red Light</span>
-            </Link>
-            <div className="flex space-x-6 items-center">
-              <Link
-                href="/class"
-                className="text-gray-300 hover:text-white text-xs"
-              >
-                더 클래스
-              </Link>
-              <Link
-                href="/market"
-                className="text-gray-300 hover:text-white text-xs"
-              >
-                관심종목
-              </Link>
-              <Link
-                href="/realtime"
-                className="text-gray-300 hover:text-white text-xs"
-              >
-                실시간
-              </Link>
-            </div>
-            <div>
-              <Link
-                href="/login"
-                className="text-gray-300 hover:text-white text-xs"
-              >
-                로그인
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      <div className="container mx-auto p-4">
+    <main className="min-h-screen bg-[#131722] text-white flex flex-col">
+      <div className="container mx-auto p-4 flex-1 flex flex-col gap-6">
         {/* 알림 영역 */}
-        <div className="flex items-center space-x-2 mb-6">
+        <div className="flex items-center space-x-2">
           <span className="text-yellow-500">🔔</span>
-          <span className="text-sm text-gray-400">
-            마이데이터 갱신 오류 안내
-          </span>
-          <span className="text-gray-400">
-            {new Date().toLocaleDateString()}
-          </span>
+          <span className="text-sm text-gray-400">마이데이터 갱신 오류 안내</span>
+          <span className="text-gray-400">{new Date().toLocaleDateString()}</span>
         </div>
 
         {/* 차트와 주요 종목 비교 영역 */}
-        <div className="flex flex-col lg:flex-row gap-4 mb-6">
-          <div className="bg-[#1E222D] rounded-lg p-4 lg:w-[65%] h-[350px]">
-            <TradingViewWidget />
+        <div className="flex flex-col lg:flex-row gap-4 flex-1">
+          {/* 차트 영역 */}
+          <div className="bg-[#1E222D] rounded-lg p-4 flex-1 flex flex-col">
+            <div className="flex-1">
+              {/* SPY 지수만 표시하도록 symbol prop 전달 */}
+              <TradingViewWidget symbol="SPY" />
+            </div>
           </div>
-          <div className="bg-[#1E222D] rounded-lg p-4 lg:w-[35%]">
+
+          {/* 주요 종목 비교 */}
+          <div className="bg-[#1E222D] rounded-lg p-4 lg:w-[35%] flex flex-col">
             <h2 className="text-xl font-bold mb-4">주요 종목 비교하기</h2>
-            <div className="grid grid-cols-1 gap-4 max-h-[350px] overflow-y-auto">
+            <div className="grid grid-cols-1 gap-4 flex-1 overflow-y-auto">
               {marketData.map((data) => (
                 <div
                   key={data.symbol}
@@ -199,13 +159,10 @@ export default function Page() {
         </div>
 
         {/* 추천 뉴스 섹션 */}
-        <div className="mb-6">
+        <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold">추천 뉴스</h2>
-            <Link
-              href="/news"
-              className="text-sm text-blue-400 hover:underline"
-            >
+            <Link href="/news" className="text-sm text-blue-400 hover:underline">
               전체 보기 →
             </Link>
           </div>
