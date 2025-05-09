@@ -1,53 +1,27 @@
-// src/components/posts/PostList.tsx
-'use client';
-
-import type { PostListResponse as Post, PageInfo as Page } from '@/types/posts';
-import { usePostList } from '@/hooks/usePostList';
-import { PostItemClient } from '@/components/posts/PostItem';
+import Link from 'next/link';
+import type { PostListResponse as Post, PageInfo } from '@/types/posts';
+import { PostItemClient } from './PostItem';
+import { Pagination } from '@/components/posts/PostListPagination';
 
 interface Props {
+  posts: Post[];
+  pageInfo: PageInfo;
   boardId: string;
-  initialPosts: Post[];
-  initialPageInfo: Page;
+  currentPage: number;
 }
 
-export function PostListClient({
-  boardId,
-  initialPosts,
-  initialPageInfo,
-}: Props) {
-  const { posts, pageInfo, isLoading, goToPage } = usePostList(
-    boardId,
-    initialPosts,
-    initialPageInfo
-  );
-
+export function PostList({ posts, pageInfo, boardId, currentPage }: Props) {
   return (
     <div>
-      {/* 게시물 리스트 */}
-      {posts.map((p) => (
-        <PostItemClient key={p.id} post={p} />
-      ))}
+      {/* 포스트 목록 */}
+      {posts.map(p => <PostItemClient key={p.id} post={p} />)}
 
-      {/* 페이지네이션 */}
-      <div className="flex justify-center mt-6 space-x-2">
-        {Array.from({ length: pageInfo.totalPages }, (_, i) => i + 1).map(
-          (num) => (
-            <button
-              key={num}
-              onClick={() => goToPage(num)}
-              disabled={isLoading || num === pageInfo.pageNumber}
-              className={`px-4 py-2 rounded-lg text-white text-sm transition ${
-                num === pageInfo.pageNumber
-                  ? 'bg-[#4a5b68]'
-                  : 'bg-[#3b4754] hover:bg-[#4a5b68]'
-              }`}
-            >
-              {num}
-            </button>
-          )
-        )}
-      </div>
+      {/* 분리된 Pagination 사용 */}
+      <Pagination
+        boardId={boardId}
+        totalPages={pageInfo.totalPages}
+        currentPage={currentPage}
+      />
     </div>
   );
 }

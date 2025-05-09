@@ -1,22 +1,29 @@
 // src/app/boards/[boardId]/posts/page.tsx
-import Link from 'next/link';
 
-import { PostListClient } from '@/components/posts/PostList';
+import { PostList } from '@/components/posts/PostList';
+export const dynamic = 'force-dynamic'; // 쿼리 변경 시 서버 사이드에서 다시 렌더링
+import Link from 'next/link';
 import { fetchPostList } from '@/service/posts';
 
 interface PageProps {
-  params: Promise<{ boardId: string }>;
+  params: { boardId: string };
+  searchParams: { page?: string };
 }
 
-export default async function BoardPostsPage({ params }: PageProps) {
-  const { boardId } = await params;
+export default async function BoardPostsPage({
+  params,
+  searchParams,
+}: PageProps) {
+  const boardIdNum = parseInt(params.boardId, 10);
+  const currentPage = searchParams.page ? parseInt(searchParams.page, 10) : 1;
+
   const {
     boardName,
-    postListResponse: initialPosts,
-    pageInfo: initialPageInfo,
+    postListResponse: posts,
+    pageInfo,
   } = await fetchPostList({
-    boardId: parseInt(boardId, 10),
-    pageNumber: 1,
+    boardId: boardIdNum,
+    pageNumber: currentPage,
   });
 
   return (
@@ -29,13 +36,14 @@ export default async function BoardPostsPage({ params }: PageProps) {
             </span>
           </Link>
         </div>
-        <h1 className="text-3xl font-bold text-center">{boardName}</h1>
+        <h1 className="text-3xl font-bold text-center mb-6">{boardName}</h1>
       </div>
 
-      <PostListClient
-        initialPosts={initialPosts}
-        initialPageInfo={initialPageInfo}
-        boardId={boardId}
+      <PostList
+        posts={posts}
+        pageInfo={pageInfo}
+        boardId={params.boardId}
+        currentPage={currentPage}
       />
     </main>
   );
