@@ -1,33 +1,36 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import {
+  fetchLikedPosts,
+    PostsLikedResponse,
+    PostsLikedAndPagingResponse,
+  } from '@/service/posts';
 
-export interface Post {
-  id: string;
-  title: string;
-  createdAt: string;
-}
-
-export function usePosts() {
-  const [posts, setPosts] = useState<Post[]>([]);
+export function usePosts(pageNumber: number = 0) {
+  const [posts, setPosts] = useState<PostsLikedResponse[]>([]);
+  const [pageInfo, setPageInfo] = useState<
+    PostsLikedAndPagingResponse['pageInfo'] | null
+  >(null);
   const [loading, setLoading] = useState(true);
-  const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
   useEffect(() => {
-    async function fetchPosts() {
+    setLoading(true);
+
+    async function load() {
       try {
-        const res = await fetch(`${API_BASE}/api/posts`);
-        const data: Post[] = await res.json();
-        setPosts(data);
+        const data = await fetchLikedPosts(pageNumber);
+        setPosts(data.likedPostsResponse);
+        setPageInfo(data.pageInfo);
       } catch (e) {
-        console.error('게시글 로딩 오류', e);
+        console.error('좋아요한 게시글 로딩 오류', e);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchPosts();
-  }, [API_BASE]);
+    load();
+  }, [pageNumber]);
 
-  return { posts, loading };
+  return { posts, pageInfo, loading };
 }
