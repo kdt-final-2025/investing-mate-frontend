@@ -1,9 +1,9 @@
 // src/components/posts/PostList.tsx
 'use client';
 
-import { PostItemClient } from './PostItem';
 import type { Post, Page } from '@/service/posts';
 import { usePostList } from '@/hooks/usePostList';
+import { PostItemClient } from '@/components/posts/PostItem';
 
 interface Props {
   boardId: string;
