@@ -1,4 +1,5 @@
-// src/app/boards/[boardId]/page.tsx
+// src/app/boards/[boardId]/posts/page.tsx
+
 import Link from 'next/link';
 import { fetchPostListAndPaging } from '@/service/posts';
 import { PostListClient } from '@/components/posts/PostList';
@@ -9,8 +10,11 @@ interface PageProps {
 
 export default async function BoardPostsPage({ params }: PageProps) {
   const { boardId } = await params;
-  const { boardName, postListResponse: initialPosts } =
-    await fetchPostListAndPaging(boardId, 1);
+  const {
+    boardName,
+    postListResponse: initialPosts,
+    pageInfo: initialPageInfo,
+  } = await fetchPostListAndPaging(boardId, 1);
 
   return (
     <main className="min-h-screen bg-[#131722] text-white p-8">
@@ -29,7 +33,11 @@ export default async function BoardPostsPage({ params }: PageProps) {
       </div>
 
       {/* 게시글 목록 */}
-      <PostListClient initialPosts={initialPosts} boardId={boardId} />
+      <PostListClient
+        initialPosts={initialPosts}
+        initialPageInfo={initialPageInfo}
+        boardId={boardId}
+      />
     </main>
   );
 }

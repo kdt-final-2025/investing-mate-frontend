@@ -21,7 +21,7 @@ export function BoardList({ boards }: { boards: Board[] }) {
         {boards.map((board) => (
           <Link
             key={board.id}
-            href={`/boards/${board.id}`}
+            href={`/boards/${board.id}/posts`}
             className="group block p-6 bg-[#1E222D] rounded-2xl shadow hover:shadow-lg transition"
           >
             <h2 className="text-xl font-semibold text-white group-hover:underline">

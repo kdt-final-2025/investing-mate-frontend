@@ -1,33 +1,38 @@
 // src/hooks/usePostList.ts
 import { useState, useCallback } from 'react';
-import { fetchPostListAndPaging, Post } from '@/service/posts';
+import { fetchPostListAndPaging, Post, Page } from '@/service/posts';
 
-export function usePostList(boardId: string, initial: Post[]) {
-  const [posts, setPosts] = useState<Post[]>(initial);
-  const [page, setPage] = useState(2);
-  const [hasMore, setHasMore] = useState(true);
+export function usePostList(
+  boardId: string,
+  initialPosts: Post[],
+  initialPageInfo: Page
+) {
+  const [posts, setPosts] = useState<Post[]>(initialPosts);
+  const [pageInfo, setPageInfo] = useState<Page>(initialPageInfo);
   const [isLoading, setIsLoading] = useState(false);
 
-  const loadMore = useCallback(async () => {
-    if (isLoading || !hasMore) return;
-    setIsLoading(true);
-    try {
-      const { postListResponse: newPosts } = await fetchPostListAndPaging(
-        boardId,
-        page
-      );
-      if (newPosts.length === 0) {
-        setHasMore(false);
-      } else {
-        setPosts((prev) => [...prev, ...newPosts]);
-        setPage((prev) => prev + 1);
+  const goToPage = useCallback(
+    async (pageNumber: number) => {
+      if (isLoading || pageNumber === pageInfo.pageNumber) return;
+      setIsLoading(true);
+      try {
+        const { postListResponse: newPosts, pageInfo: newPageInfo } =
+          await fetchPostListAndPaging(boardId, pageNumber, pageInfo.size);
+        setPosts(newPosts);
+        setPageInfo(newPageInfo);
+      } catch (e) {
+        console.error('페이지 로드 실패', e);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (e) {
-      console.error('더 불러오기 실패', e);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [boardId, page, isLoading, hasMore]);
+    },
+    [boardId, isLoading, pageInfo.pageNumber, pageInfo.size]
+  );
 
-  return { posts, hasMore, isLoading, loadMore };
+  return {
+    posts,
+    pageInfo,
+    isLoading,
+    goToPage,
+  };
 }

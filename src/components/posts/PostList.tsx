@@ -2,40 +2,52 @@
 'use client';
 
 import { PostItemClient } from './PostItem';
-import type { Post } from '@/service/posts';
+import type { Post, Page } from '@/service/posts';
 import { usePostList } from '@/hooks/usePostList';
 
 interface Props {
-  initialPosts: Post[];
   boardId: string;
+  initialPosts: Post[];
+  initialPageInfo: Page;
 }
 
-export function PostListClient({ initialPosts, boardId }: Props) {
-  // 커스텀 훅으로 로직 분리, UI 디자인 유지
-  const { posts, hasMore, isLoading, loadMore } = usePostList(
+export function PostListClient({
+  boardId,
+  initialPosts,
+  initialPageInfo,
+}: Props) {
+  const { posts, pageInfo, isLoading, goToPage } = usePostList(
     boardId,
-    initialPosts
+    initialPosts,
+    initialPageInfo
   );
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold text-white mb-4">게시글 목록</h1>
-      <div className="space-y-4">
-        {posts.map((post) => (
-          <PostItemClient key={post.id} post={post} />
-        ))}
+    <div>
+      {/* 게시물 리스트 */}
+      {posts.map((p) => (
+        <PostItemClient key={p.id} post={p} />
+      ))}
+
+      {/* 페이지네이션 */}
+      <div className="flex justify-center mt-6 space-x-2">
+        {Array.from({ length: pageInfo.totalPages }, (_, i) => i + 1).map(
+          (num) => (
+            <button
+              key={num}
+              onClick={() => goToPage(num)}
+              disabled={isLoading || num === pageInfo.pageNumber}
+              className={`px-4 py-2 rounded-lg text-white text-sm transition ${
+                num === pageInfo.pageNumber
+                  ? 'bg-[#4a5b68]'
+                  : 'bg-[#3b4754] hover:bg-[#4a5b68]'
+              }`}
+            >
+              {num}
+            </button>
+          )
+        )}
       </div>
-      {hasMore && (
-        <div className="flex justify-center mt-6">
-          <button
-            onClick={loadMore}
-            disabled={isLoading}
-            className="px-4 py-2 bg-[#3b4754] hover:bg-[#4a5b68] rounded-lg text-white text-sm transition"
-          >
-            {isLoading ? '로딩 중...' : '더 보기'}
-          </button>
-        </div>
-      )}
     </div>
   );
 }
