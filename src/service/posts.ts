@@ -1,4 +1,4 @@
-// src/services/posts.ts
+// src/service/posts.ts
 import { API_BASE } from '@/service/baseAPI';
 import { createClient } from '@/utils/supabase/client';
 import { getSessionOrThrow } from '@/utils/auth';

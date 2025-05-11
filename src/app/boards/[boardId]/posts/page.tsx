@@ -1,21 +1,23 @@
 // src/app/boards/[boardId]/posts/page.tsx
 
 import { PostList } from '@/components/posts/PostList';
-export const dynamic = 'force-dynamic'; // 쿼리 변경 시 서버 사이드에서 다시 렌더링
 import Link from 'next/link';
 import { fetchPostList } from '@/service/posts';
 
 interface PageProps {
-  params: { boardId: string };
-  searchParams: { page?: string };
+  params: Promise<{ boardId: string }>;
+  searchParams: Promise<{ page?: string }>;
 }
 
 export default async function BoardPostsPage({
   params,
   searchParams,
 }: PageProps) {
-  const boardIdNum = parseInt(params.boardId, 10);
-  const currentPage = searchParams.page ? parseInt(searchParams.page, 10) : 1;
+  const { boardId: boardIdString } = await params;
+  const { page } = await searchParams;
+
+  const boardIdNum = parseInt(boardIdString, 10);
+  const currentPage = page ? parseInt(page, 10) : 1;
 
   const {
     boardName,
@@ -31,9 +33,16 @@ export default async function BoardPostsPage({
       <div className="relative mb-6">
         <div className="absolute left-0 top-0">
           <Link href="/boards">
-            <span className="text-white hover:underline cursor-pointer">
+            <button className="px-4 py-2 bg-[#3b4754] hover:bg-[#4a5b68] rounded-full text-white text-sm">
               ← 게시판 목록
-            </span>
+            </button>
+          </Link>
+        </div>
+        <div className="absolute right-0 top-0">
+          <Link href={`/posts/new?boardId=${boardIdString}`}>
+            <button className="px-4 py-2 bg-[#3b4754] hover:bg-[#4a5b68] rounded-full text-white text-sm">
+              + 새 게시글
+            </button>
           </Link>
         </div>
         <h1 className="text-3xl font-bold text-center mb-6">{boardName}</h1>
@@ -42,7 +51,7 @@ export default async function BoardPostsPage({
       <PostList
         posts={posts}
         pageInfo={pageInfo}
-        boardId={params.boardId}
+        boardId={boardIdString}
         currentPage={currentPage}
       />
     </main>

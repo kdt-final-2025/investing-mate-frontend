@@ -1,7 +1,7 @@
 // src/app/posts/[postId]/page.tsx
+import Link from 'next/link';
 import PostDetailClient from '@/components/posts/PostDetailClient';
 import { getPost } from '@/service/posts';
-
 
 interface Props {
   params: Promise<{ postId: string }>;
@@ -12,11 +12,20 @@ export default async function PostDetailPage({ params }: Props) {
   const post = await getPost(Number(postId));
 
   return (
-    <div className="min-h-screen bg-[#131722] text-white container mx-auto p-6">
-      <div className="relative mb-6">
-        <h1 className="text-3xl font-bold text-center">{post.postTitle}</h1>
+    <main className="min-h-screen bg-[#131722] text-white container mx-auto p-6">
+      <div className="relative mb-6 flex flex-col items-center">
+        <div className="self-start">
+          <Link href={`/boards/${post.boardId}/posts`}>
+            <button className="px-4 py-2 bg-[#3b4754] hover:bg-[#4a5b68] rounded-full text-white text-sm">
+              ← 게시물 목록
+            </button>
+          </Link>
+        </div>
+        <h1 className="text-3xl font-bold text-center mt-4">
+          {post.postTitle}
+        </h1>
       </div>
       <PostDetailClient postId={postId} initialPost={post} />
-    </div>
+    </main>
   );
 }
