@@ -99,10 +99,10 @@ export default function PostDetailClient({ initialPost, postId }: Props) {
     }
   );
 
-  // **편집 모드**
+  // 편집 모드
   if (isEditing) {
     return (
-      <main className="min-h-screen bg-[#131722] text-white p-8">
+      <main className="min-h-screen w-full max-w-none bg-[#131722] text-white p-8">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
             <input
@@ -156,9 +156,9 @@ export default function PostDetailClient({ initialPost, postId }: Props) {
     );
   }
 
-  // **일반 보기 모드**
+  // 일반 보기 모드
   return (
-    <main className="min-h-screen bg-[#131722] text-white p-8 flex flex-col">
+    <main className="min-h-screen w-full max-w-none bg-[#131722] text-white p-8 flex flex-col">
       {/* 헤더 */}
       <header className="flex justify-between items-center mb-6">
         <div className="flex space-x-2 text-sm text-gray-400">
@@ -211,15 +211,15 @@ export default function PostDetailClient({ initialPost, postId }: Props) {
           <p className="whitespace-pre-wrap">{initialPost.content}</p>
         </div>
 
-        {/* 2) 사진 (글 아래에) */}
+        {/* 2) 사진 (글 아래에, 중앙 정렬) */}
         {initialPost.imageUrls.length > 0 && (
-          <div className="grid grid-cols-1 gap-4">
+          <div className="flex flex-col space-y-4 items-center">
             {initialPost.imageUrls.map((url, i) => (
               <img
                 key={i}
                 src={url}
                 alt={`post-img-${i}`}
-                className="w-full rounded-lg object-cover"
+                className="max-w-full rounded-lg object-cover"
               />
             ))}
           </div>
