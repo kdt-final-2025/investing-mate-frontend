@@ -5,7 +5,7 @@ export interface CommentLikeResponse {
 }
 
 export interface CommentResponse {
-  commentId: number;
+  commentId: string;
   userId: string;
   content: string;
   likeCount: number;
