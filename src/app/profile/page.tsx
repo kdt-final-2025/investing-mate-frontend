@@ -6,7 +6,7 @@ import LoadingWrapper from '@/components/LoadingWrapper';
 import { createClient } from '@/utils/supabase/client';
 import { useUser } from '@/hooks/useProfile/useUser';
 import { useComments } from '@/hooks/useProfile/useComments';
-import { usePosts } from '@/hooks/useProfile/usePosts';
+import { useLikePosts } from '@/hooks/useProfile/useLikePosts';
 import { useReporterApplication } from '@/hooks/useProfile/useReporterApplication';
 
 export default function ProfilePage() {
@@ -14,7 +14,7 @@ export default function ProfilePage() {
   const { avatarUrl, userName, userEmail } = useUser(supabase);
 
   const { comments, loading: loadingComments } = useComments();
-  const { posts, loading: loadingPosts } = usePosts();
+  const { posts, loading: loadingPosts } = useLikePosts();
 
   // useReporterApplication 하나로 isAdmin, isReporter, 로딩, 상태, 핸들러 전부 반환
   const {
@@ -123,25 +123,34 @@ export default function ProfilePage() {
               {loadingPosts ? (
                 <p className="text-gray-400">불러오는 중…</p>
               ) : posts && posts.length > 0 ? (
-                posts.map((p) => (
-                  <div
-                    key={p.boardId}
-                    className="border-b border-gray-700 pb-2"
-                  >
-                    <Link
-                      href={`/posts/${p.boardId}`} // postId 대신 boardId 사용
-                      className="font-medium hover:underline"
+                // 최신 순 정렬 후 10개만
+                posts
+                  .slice() // 원본 건드리지 않기 위해 얕은 복사
+                  .sort(
+                    (a, b) =>
+                      new Date(b.createdAt).getTime() -
+                      new Date(a.createdAt).getTime()
+                  )
+                  .slice(0, 10)
+                  .map((p) => (
+                    <div
+                      key={p.postId}
+                      className="border-b border-gray-700 pb-2"
                     >
-                      {p.postTitle} {/* PostsLikedResponse.postTitle */}
-                    </Link>
-                    <div className="text-xs text-gray-500 mt-1">
-                      <span>{new Date(p.createdAt).toLocaleString()}</span>
-                      <span className="ml-2">💬 {p.commentCount}</span>
-                      <span className="ml-2">👍 {p.likeCount}</span>
-                      <span className="ml-2">👁️ {p.viewCount}</span>
+                      <Link
+                        href={`/posts/${p.postId}`} // postId 대신 boardId 사용
+                        className="font-medium hover:underline"
+                      >
+                        {p.postTitle} {/* PostsLikedResponse.postTitle */}
+                      </Link>
+                      <div className="text-xs text-gray-500 mt-1">
+                        <span>{new Date(p.createdAt).toLocaleString()}</span>
+                        <span className="ml-2">💬 {p.commentCount}</span>
+                        <span className="ml-2">👍 {p.likeCount}</span>
+                        <span className="ml-2">👁️ {p.viewCount}</span>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  ))
               ) : (
                 <p className="text-gray-400">좋아요한 게시글이 없습니다.</p>
               )}
