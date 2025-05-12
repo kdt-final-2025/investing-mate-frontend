@@ -12,7 +12,7 @@ export default async function PostDetailPage({ params }: Props) {
   const post = await getPost(Number(postId));
 
   return (
-    <main className="min-h-screen bg-[#131722] text-white container mx-auto p-6">
+    <main className="min-h-screen bg-[#131722] text-white p-8">
       <div className="relative mb-6 flex flex-col items-center">
         <div className="self-start">
           <Link href={`/boards/${post.boardId}/posts`}>
