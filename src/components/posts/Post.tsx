@@ -1,4 +1,4 @@
-// src/components/posts/PostDetailClient.tsx
+// src/components/posts/Post.tsx
 'use client';
 
 import { useState, useRef } from 'react';
@@ -18,7 +18,7 @@ interface Props {
   postId: string;
 }
 
-export default function PostDetailClient({ initialPost, postId }: Props) {
+export default function Post({ initialPost, postId }: Props) {
   const isAuthor = useIsAuthor(initialPost.userId);
   const [isEditing, setIsEditing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);

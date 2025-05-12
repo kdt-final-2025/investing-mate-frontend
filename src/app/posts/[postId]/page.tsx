@@ -1,6 +1,6 @@
 // src/app/posts/[postId]/page.tsx
 import Link from 'next/link';
-import PostDetailClient from '@/components/posts/PostDetailClient';
+import Post from '@/components/posts/Post';
 import { getPost } from '@/service/posts';
 
 interface Props {
@@ -25,7 +25,7 @@ export default async function PostDetailPage({ params }: Props) {
           {post.postTitle}
         </h1>
       </div>
-      <PostDetailClient postId={postId} initialPost={post} />
+      <Post postId={postId} initialPost={post} />
     </main>
   );
 }
