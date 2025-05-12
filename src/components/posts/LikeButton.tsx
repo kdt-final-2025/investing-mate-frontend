@@ -1,41 +1,52 @@
+// src/components/posts/LikeButton.tsx
 'use client';
 
-import { useState } from 'react';
-import { API_URL } from '@/env/constants';
+import React, { useState } from 'react';
+import { Heart } from 'lucide-react';
+import { toggleLike } from '@/service/posts';
 
-export async function LikeButton({
-  postId,
-  likedByMe,
-  onUnlike,
-}: {
+interface LikeButtonProps {
+  // 게시글 ID
   postId: number;
-  likedByMe: boolean;
-  onUnlike?: (postId: number) => void;
-}) {
-  const [liked, setLiked] = useState(likedByMe);
+  // 초기 좋아요 여부
+  initialLiked: boolean;
+  // 초기 좋아요 카운트
+  initialCount: number;
+  className?: string;
+}
 
-  const toggleLike = async () => {
-    const res = await fetch(`${API_URL}/posts/${postId}/like`, {
-      method: liked ? 'DELETE' : 'POST',
-      headers: {
-        Authorization: 'Bearer your_token_here',
-      },
-    });
+export default function LikeButton({
+  postId,
+  initialLiked,
+  initialCount,
+  className = '',
+}: LikeButtonProps) {
+  const [liked, setLiked] = useState(initialLiked);
+  const [likeCount, setLikeCount] = useState(initialCount);
+  const [loading, setLoading] = useState(false);
 
-    if (res.ok) {
-      setLiked(!liked);
-      if (liked && onUnlike) {
-        onUnlike(postId); // 좋아요 취소 -> 목록에서도 제거
-      }
+  const handleToggle = async () => {
+    if (loading) return;
+    setLoading(true);
+    try {
+      const result = await toggleLike(postId);
+      setLiked(result.liked);
+      setLikeCount(result.likeCount);
+    } catch (err) {
+      console.error('좋아요 토글 중 오류 발생:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <button
-      onClick={toggleLike}
-      className="text-xs text-blue-400 hover:text-blue-500"
+      onClick={handleToggle}
+      disabled={loading}
+      className={`flex items-center space-x-1 hover:text-red-400 transition text-sm ${className} ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
     >
-      {liked ? '좋아요 취소' : '좋아요'}
+      <Heart size={20} fill={liked ? 'currentColor' : 'none'} />
+      <span>{likeCount}</span>
     </button>
   );
 }
