@@ -1,4 +1,3 @@
-// src/components/posts/LikeButton.tsx
 'use client';
 
 import React, { useState } from 'react';
@@ -12,7 +11,10 @@ interface LikeButtonProps {
   initialLiked: boolean;
   // 초기 좋아요 카운트
   initialCount: number;
+  // 추가 스타일 클래스
   className?: string;
+  // 좋아요 토글 후 콜백
+  onToggle?: (liked: boolean) => void;
 }
 
 export default function LikeButton({
@@ -20,6 +22,7 @@ export default function LikeButton({
   initialLiked,
   initialCount,
   className = '',
+  onToggle,
 }: LikeButtonProps) {
   const [liked, setLiked] = useState(initialLiked);
   const [likeCount, setLikeCount] = useState(initialCount);
@@ -32,6 +35,7 @@ export default function LikeButton({
       const result = await toggleLike(postId);
       setLiked(result.liked);
       setLikeCount(result.likeCount);
+      onToggle?.(result.liked);
     } catch (err) {
       console.error('좋아요 토글 중 오류 발생:', err);
     } finally {
