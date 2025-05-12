@@ -5,13 +5,13 @@ export interface CommentLikeResponse {
 }
 
 export interface CommentResponse {
-  commentId: number;
+  commentId: string;
   userId: string;
   content: string;
   likeCount: number;
   likedByMe: boolean;
   createdAt: string;
-  children: CommentLikeResponse[];
+  children: Comment[];
 }
 
 export interface Pagemeta {
@@ -26,26 +26,7 @@ export interface CommentResponseAndPaging {
 }
 
 export interface CreateCommentRequest {
-  postId: number;
-  parentId?: number;
+  postId: string;
+  parentId?: string | null;
   content: string;
-}
-// 댓글 및 대댓글 인터페이스
-export interface Comment {
-  id: number;
-  content: string;
-  author: string;
-  createdAt: string;
-  likeCount: number;
-  likedByMe: boolean;
-  parentId?: number;
-  replies?: Comment[]; // 대댓글 배열
-}
-
-export interface PaginatedCommentResponse {
-  totalPage: number;
-  totalCount: number;
-  pageNumber: number;
-  pageSize: number;
-  items: Comment[];
 }

@@ -4,14 +4,29 @@ import { createClient } from '@/utils/supabase/client';
 import {
   CommentResponse,
   CreateCommentRequest,
-  Pagemeta,
   CommentResponseAndPaging,
   CommentLikeResponse,
-  Comment,
-  PaginatedCommentResponse,
 } from '@/types/comments';
 import { getSessionOrThrow } from '@/utils/auth';
+// 댓글 및 대댓글 인터페이스
+export interface Comment {
+  id: string;
+  content: string;
+  author: string;
+  createdAt: string;
+  likeCount: number;
+  likedByMe: boolean;
+  parentId?: string;
+  replies?: Comment[]; // 대댓글 배열
+}
 
+export interface PaginatedCommentResponse {
+  totalPage: number;
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+  items: Comment[];
+}
 /**
  * 좋아요순 또는 최신순 정렬된 댓글+대댓글 조회 (페이징 포함)
  * 백엔드: GET /comments/likes
@@ -24,13 +39,11 @@ export async function createComment(
   const supabase = createClient();
   const session = await getSessionOrThrow(supabase);
   const token = session.access_token;
-  const res = await axios.post(`${API_URL}/comments`, {
+  const res = await axios.post(`${API_URL}/comments`, request, {
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(request),
-    cache: 'no-store',
   });
   return res.data;
 }
@@ -44,7 +57,7 @@ export async function updateComment(
   const session = await getSessionOrThrow(supabase);
   const token = session.access_token;
   const res = await axios.put(
-    `${API_URL}/comments/${parseInt(commentId)}}`,
+    `${API_URL}/comments/${parseInt(commentId)}`,
     request,
     {
       headers: {
@@ -57,48 +70,57 @@ export async function updateComment(
 }
 
 // 댓글 삭제
-export async function deleteComment(
-  userId: string,
-  commentId: string
-): Promise<void> {
+export async function deleteComment(commentId: string): Promise<void> {
   const supabase = createClient();
   const session = await getSessionOrThrow(supabase);
   const token = session.access_token;
-  const res = await axios.delete(`${API_URL}/${commentId}`, {
+  const res = await axios.delete(`${API_URL}/comments/${parseInt(commentId)}`, {
     headers: {
-      Authorization: userId,
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
     },
-  });
-  return res.data;
-}
-
-// 댓글 수정
-export async function updxateComment(
-  userId: string,
-  postId: number,
-  parentId: number | undefined,
-  commentId: number,
-  request: CreateCommentRequest
-): Promise<Comment> {
-  const res = await axios.patch(`${API_URL}${commentId}`, {
-    postId,
-    parentId,
-    headers: {
-      Authorization: userId,
-    },
-    body: JSON.stringify(request),
   });
   return res.data;
 }
 
 // 댓글 좋아요 토글
 export async function likeComment(
-  userId: string,
-  commentId: number
-): Promise<{ likeCount: number; likedByMe: boolean }> {
-  const res = await axios.post(`${API_URL}/comments/${commentId}/likes`, {
+  commentId: string
+): Promise<CommentLikeResponse> {
+  const supabase = createClient();
+  const session = await getSessionOrThrow(supabase);
+  const token = session.access_token;
+  const res = await axios.post(
+    `${API_URL}/comments/${parseInt(commentId)}/likes`,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return res.data;
+}
+//댓글 조회
+export async function commentList(
+  postId: string,
+  sortType: string,
+  size: string,
+  pageNumber: string
+): Promise<CommentResponseAndPaging> {
+  const supabase = createClient();
+  const session = await getSessionOrThrow(supabase);
+  const token = session.access_token;
+  const res = await axios.get(`${API_URL}/comments`, {
+    params: {
+      postId,
+      sortType,
+      size,
+      pageNumber,
+    },
     headers: {
-      Authorization: userId,
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
     },
   });
   return res.data;

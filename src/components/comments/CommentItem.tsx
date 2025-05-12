@@ -6,19 +6,19 @@ import {
   updateComment,
   likeComment,
 } from '../../service/comments';
+import { CreateCommentRequest } from '@/types/comments';
 import CommentForm from './CommentForm';
+
 interface Props {
   comment: Comment;
-  boardId: string;
   postId: string;
-  onDeleted: (id: number) => void;
+  onDeleted: (id: string) => void;
   onUpdated: (c: Comment) => void;
   onLiked: (c: Comment) => void;
 }
 
 export default function CommentItem({
   comment,
-  boardId,
   postId,
   onDeleted,
   onUpdated,
@@ -27,34 +27,104 @@ export default function CommentItem({
   const [isEditing, setIsEditing] = useState(false);
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [text, setText] = useState(comment.content);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleDelete = async () => {
-    await deleteComment(boardId, postId, comment.id);
-    onDeleted(comment.id);
+    if (!window.confirm('정말 이 댓글을 삭제하시겠습니까?')) {
+      return;
+    }
+
+    setIsDeleting(true);
+    setError(null);
+
+    try {
+      await deleteComment(comment.id);
+      onDeleted(comment.id);
+    } catch (err) {
+      console.error('댓글 삭제 실패:', err);
+      setError('댓글 삭제에 실패했습니다.');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleUpdate = async () => {
-    const updated = await updateComment(boardId, postId, comment.id, text);
-    onUpdated(updated);
-    setIsEditing(false);
+    if (!text.trim()) {
+      return;
+    }
+
+    setIsUpdating(true);
+    setError(null);
+
+    const request: CreateCommentRequest = {
+      postId,
+      parentId: comment.parentId ?? null,
+      content: text,
+    };
+
+    try {
+      await updateComment(String(comment.id), request);
+      onUpdated({
+        ...comment,
+        content: text,
+      });
+      setIsEditing(false);
+    } catch (err) {
+      console.error('댓글 수정 실패:', err);
+      setError('댓글 수정에 실패했습니다.');
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const handleLike = async () => {
-    const result = await likeComment(boardId, postId, comment.id);
-    onLiked({
-      ...comment,
-      likeCount: result.likeCount,
-      likedByMe: result.likedByMe,
-    });
+    if (isLiking) return;
+
+    setIsLiking(true);
+    setError(null);
+
+    try {
+      const result = await likeComment(String(comment.id));
+      onLiked({
+        ...comment,
+        likeCount: result.likeCount,
+        likedByMe: result.likedByMe,
+      });
+    } catch (err) {
+      console.error('좋아요 토글 실패:', err);
+      setError('좋아요 처리에 실패했습니다.');
+    } finally {
+      setIsLiking(false);
+    }
   };
 
   const handleReplyCreated = (newComment: Comment) => {
-    // bubble up new reply
+    // 새 답글 추가
+    const updatedReplies = [...(comment.replies || []), newComment];
     onUpdated({
       ...comment,
-      replies: [...(comment.replies || []), newComment],
+      replies: updatedReplies,
     });
     setShowReplyForm(false);
+  };
+
+  // 시간 형식 포맷팅
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch (e) {
+      return dateString;
+    }
   };
 
   return (
@@ -62,55 +132,84 @@ export default function CommentItem({
       <div className="flex justify-between">
         <span className="text-sm font-medium text-white">{comment.author}</span>
         <span className="text-xs text-gray-400">
-          {new Date(comment.createdAt).toLocaleString()}
+          {formatDate(comment.createdAt)}
         </span>
       </div>
 
       {isEditing ? (
-        <textarea
-          className="w-full bg-[#1E222D] border border-[#363A45] text-white mt-2 p-2 rounded-lg"
-          value={text}
-          onChange={(e) => setText(e.currentTarget.value)}
-        />
-      ) : (
-        <p className="mt-2">{comment.content}</p>
-      )}
-
-      <div className="mt-2 flex space-x-4">
-        <button onClick={handleLike} className="btn btn-xs">
-          {comment.likedByMe ? '💖' : '🤍'} {comment.likeCount}
-        </button>
-        {isEditing ? (
-          <>
-            <button onClick={handleUpdate} className="btn btn-sm">
-              Save
-            </button>
-            <button onClick={() => setIsEditing(false)} className="btn btn-sm">
-              Cancel
-            </button>
-          </>
-        ) : (
-          <>
-            <button onClick={() => setIsEditing(true)} className="btn btn-sm">
-              Edit
-            </button>
-            <button onClick={handleDelete} className="btn btn-sm">
-              Delete
+        <div className="mt-2">
+          <textarea
+            className="w-full bg-[#1E222D] border border-[#363A45] text-white p-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+            value={text}
+            onChange={(e) => setText(e.currentTarget.value)}
+            disabled={isUpdating}
+            rows={3}
+          />
+          <div className="flex space-x-2 mt-2">
+            <button
+              onClick={handleUpdate}
+              disabled={isUpdating || !text.trim()}
+              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-md disabled:opacity-50"
+            >
+              {isUpdating ? '저장 중...' : '저장'}
             </button>
             <button
-              onClick={() => setShowReplyForm(!showReplyForm)}
-              className="btn btn-sm"
+              onClick={() => {
+                setIsEditing(false);
+                setText(comment.content);
+                setError(null);
+              }}
+              disabled={isUpdating}
+              className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white text-xs rounded-md disabled:opacity-50"
             >
-              Reply
+              취소
             </button>
-          </>
-        )}
+          </div>
+        </div>
+      ) : (
+        <p className="mt-2 text-gray-200 whitespace-pre-wrap break-words">
+          {comment.content}
+        </p>
+      )}
+
+      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+
+      <div className="mt-3 flex space-x-3 text-xs">
+        <button
+          onClick={handleLike}
+          disabled={isLiking}
+          className="flex items-center space-x-1 text-gray-400 hover:text-white disabled:opacity-50"
+        >
+          <span>{comment.likedByMe ? '💖' : '🤍'}</span>
+          <span>{comment.likeCount}</span>
+        </button>
+
+        <button
+          onClick={() => setShowReplyForm(!showReplyForm)}
+          className="text-gray-400 hover:text-white"
+        >
+          답글
+        </button>
+
+        <button
+          onClick={() => setIsEditing(true)}
+          className="text-gray-400 hover:text-white"
+        >
+          수정
+        </button>
+
+        <button
+          onClick={handleDelete}
+          disabled={isDeleting}
+          className="text-gray-400 hover:text-red-400 disabled:opacity-50"
+        >
+          {isDeleting ? '삭제 중...' : '삭제'}
+        </button>
       </div>
 
       {showReplyForm && (
-        <div className="ml-6 mt-2">
+        <div className="ml-4 mt-3 border-l-2 border-gray-700 pl-3">
           <CommentForm
-            boardId={boardId}
             postId={postId}
             parentId={comment.id}
             onCreated={handleReplyCreated}
@@ -119,12 +218,11 @@ export default function CommentItem({
       )}
 
       {comment.replies && comment.replies.length > 0 && (
-        <div className="ml-6 mt-4 space-y-4">
+        <div className="ml-4 mt-4 space-y-3 border-l-2 border-gray-700 pl-3">
           {comment.replies.map((reply) => (
             <CommentItem
               key={reply.id}
               comment={reply}
-              boardId={boardId}
               postId={postId}
               onDeleted={onDeleted}
               onUpdated={onUpdated}
