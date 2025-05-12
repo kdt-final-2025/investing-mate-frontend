@@ -64,6 +64,7 @@ export interface PostLikeResponse {
 }
 
 export interface PostsLikedResponse {
+  postId: number;
   boardId: number;
   boardName: string;
   postTitle: string;

@@ -1,4 +1,4 @@
-import Link from 'next/link';
+// src/components/posts/PostList.tsx
 import type { PostListResponse as Post, PageInfo } from '@/types/posts';
 import { PostItemClient } from './PostItem';
 import { Pagination } from '@/components/posts/PostListPagination';
