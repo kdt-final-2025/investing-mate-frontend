@@ -1,6 +1,4 @@
 // src/app/posts/liked/page.tsx
-'use client';
-
 import { LikedPostList } from '@/components/posts/LikedPostList';
 
 export default function LikedPostsPage() {
