@@ -95,24 +95,19 @@ export default function Page() {
     <main className="min-h-screen bg-[#131722] text-white flex flex-col">
       <div className="container mx-auto p-4 flex-1 flex flex-col gap-6">
         {/* 알림 영역 */}
-        <div className="flex items-center space-x-2">
-          <span className="text-yellow-500">🔔</span>
-          <span className="text-sm text-gray-400">마이데이터 갱신 오류 안내</span>
-          <span className="text-gray-400">{new Date().toLocaleDateString()}</span>
-        </div>
+        <div className="flex items-center space-x-2"></div>
 
-        {/* 차트와 주요 종목 비교 영역 */}
+        {/* 차트, 주요 종목, 경제지표 위젯 영역 */}
         <div className="flex flex-col lg:flex-row gap-4 flex-1">
           {/* 차트 영역 */}
           <div className="bg-[#1E222D] rounded-lg p-4 flex-1 flex flex-col">
             <div className="flex-1">
-              {/* SPY 지수만 표시하도록 symbol prop 전달 */}
               <TradingViewWidget symbol="SPY" />
             </div>
           </div>
 
-          {/* 주요 종목 비교 */}
-          <div className="bg-[#1E222D] rounded-lg p-4 lg:w-[35%] flex flex-col">
+          {/* 주요 종목 비교 (가로 길이 절반) */}
+          <div className="bg-[#1E222D] rounded-lg p-4 lg:w-1/4 flex flex-col">
             <h2 className="text-xl font-bold mb-4">주요 종목 비교하기</h2>
             <div className="grid grid-cols-1 gap-4 flex-1 overflow-y-auto">
               {marketData.map((data) => (
@@ -154,6 +149,20 @@ export default function Page() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* 경제 지표 위젯 추가 */}
+          <div className="bg-[#1E222D] rounded-lg p-4 lg:w-1/4 flex flex-col">
+            <h2 className="text-xl font-bold mb-4">경제 지표</h2>
+            <div className="flex-1 overflow-auto">
+              <iframe
+                src="https://sslecal2.investing.com?columns=exc_flags,exc_currency,exc_importance,exc_actual,exc_forecast,exc_previous&features=datepicker,timezone&countries=110,43,17,42,5,178,32,12,26,36,4,72,10,14,48,35,37,6,122,41,22,11,25,39&calType=week&timeZone=88&lang=18"
+                width="100%"
+                height="100%"
+                frameBorder="0"
+                className="rounded-lg"
+              />
             </div>
           </div>
         </div>

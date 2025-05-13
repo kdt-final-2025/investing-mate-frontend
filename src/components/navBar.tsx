@@ -10,10 +10,10 @@ interface NavBarProps {
 }
 
 export default function NavBar({
-  avatarUrl,
-  userName,
-  userEmail,
-}: NavBarProps) {
+                                 avatarUrl,
+                                 userName,
+                                 userEmail,
+                               }: NavBarProps) {
   return (
     <nav className="bg-[#1E222D] border-b border-[#363A45]">
       <div className="container mx-auto px-4 flex items-center justify-between h-16">
@@ -29,10 +29,10 @@ export default function NavBar({
           {/* 데스크탑용 메뉴 (md 이상) */}
           <div className="flex space-x-6 max-md:hidden items-center">
             <Link
-              href="/class"
+              href="/indicator"
               className="text-gray-300 hover:text-white text-xs"
             >
-              더 클래스
+              경제지표
             </Link>
             <Link
               href="/market"
@@ -41,10 +41,10 @@ export default function NavBar({
               관심종목
             </Link>
             <Link
-              href="/portfolio"
+              href="/company"
               className="text-gray-300 hover:text-white text-xs"
             >
-              포트폴리오
+              주식
             </Link>
             <Link
               href="/realtime"
