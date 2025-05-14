@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import { API_BASE } from '@/service/baseAPI';
 interface Props { children: React.ReactNode }
 export function SupabaseListener({ children }: Props) {
   const supabase = createClient();
@@ -10,7 +11,7 @@ export function SupabaseListener({ children }: Props) {
     const { data: listener } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (event === 'SIGNED_IN' && session) {
-          fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/member/me`, {
+          fetch(`${API_BASE}/member/me`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

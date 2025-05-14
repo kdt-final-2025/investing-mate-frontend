@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { API_URL } from '@/env/constants';
-import { LikeButton } from './LikeButton'; // 기존에 만든 LikeButton 컴포넌트
+import { fetchLikedPosts } from '@/service/posts';
+import LikeButton from '@/components/posts/LikeButton';
 
-type LikedPost = {
-  id: number;
+// PostsLikedResponse와 동일한 타입
+interface LikedPost {
+  postId: number;
   boardId: number;
   boardName: string;
   postTitle: string;
@@ -13,9 +14,19 @@ type LikedPost = {
   viewCount: number;
   commentCount: number;
   likeCount: number;
-};
+}
 
-export function LikedPostList({ initialPosts }: { initialPosts: LikedPost[] }) {
+interface LikedPostListProps {
+  /** 서버에서 미리 불러온 첫 페이지 데이터 (없으면 빈 배열) */
+  initialPosts: LikedPost[];
+  /** 한 페이지당 불러올 개수 (기본 10) */
+  pageSize?: number;
+}
+
+export function LikedPostList({
+  initialPosts,
+  pageSize = 10,
+}: LikedPostListProps) {
   const [posts, setPosts] = useState<LikedPost[]>(initialPosts);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -24,51 +35,57 @@ export function LikedPostList({ initialPosts }: { initialPosts: LikedPost[] }) {
 
   const loadMorePosts = useCallback(async () => {
     if (!hasMore || loading) return;
-
     setLoading(true);
     try {
-      const res = await fetch(
-        `${API_URL}/posts/liked?pageNumber=${page}&size=10`,
-        {
-          headers: { Authorization: 'Bearer your_token_here' },
-          cache: 'no-store',
-        }
+      // API에서 페이지 정보 포함된 응답 받기
+      const { likedPostsResponse: items, pageInfo } = await fetchLikedPosts(
+        page,
+        pageSize
       );
-      const data = await res.json();
 
-      if (data.items.length === 0) {
-        setHasMore(false);
+      if (items.length > 0) {
+        // 중복 없이 새 항목만 추가
+        setPosts((prev) => {
+          const existing = new Set(prev.map((p) => p.postId));
+          const newItems = items.filter((item) => !existing.has(item.postId));
+          return [...prev, ...newItems];
+        });
+
+        // 마지막 페이지라면 추가 로드 중지
+        if (
+          pageInfo.pageNumber >= pageInfo.totalPages ||
+          items.length < pageSize
+        ) {
+          setHasMore(false);
+        } else {
+          setPage((prev) => prev + 1);
+        }
       } else {
-        setPosts((prev) => [...prev, ...data.items]);
-        setPage((prev) => prev + 1);
+        setHasMore(false);
       }
-    } catch (e) {
-      console.error('좋아요한 글 불러오기 실패', e);
+    } catch (error) {
+      console.error('좋아요한 글 불러오기 실패', error);
+      setHasMore(false);
     } finally {
       setLoading(false);
     }
-  }, [page, hasMore, loading]);
+  }, [page, hasMore, loading, pageSize]);
 
+  // 무한 스크롤 관찰
   useEffect(() => {
-    const observer = new IntersectionObserver((entries) => {
+    const obs = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting && hasMore && !loading) {
         loadMorePosts();
       }
     });
-
-    if (loaderRef.current) {
-      observer.observe(loaderRef.current);
-    }
-
+    if (loaderRef.current) obs.observe(loaderRef.current);
     return () => {
-      if (loaderRef.current) {
-        observer.unobserve(loaderRef.current);
-      }
+      if (loaderRef.current) obs.unobserve(loaderRef.current);
     };
   }, [loadMorePosts, hasMore, loading]);
 
-  const handleLikeToggle = (postId: number) => {
-    setPosts((prev) => prev.filter((post) => post.id !== postId));
+  const handleUnlike = (postId: number) => {
+    setPosts((prev) => prev.filter((p) => p.postId !== postId));
   };
 
   return (
@@ -77,7 +94,7 @@ export function LikedPostList({ initialPosts }: { initialPosts: LikedPost[] }) {
       <div className="space-y-4">
         {posts.map((post) => (
           <div
-            key={post.id}
+            key={post.postId}
             className="bg-[#1E222D] p-4 rounded-xl shadow hover:shadow-md transition"
           >
             <h3 className="text-lg font-semibold text-white">
@@ -92,23 +109,23 @@ export function LikedPostList({ initialPosts }: { initialPosts: LikedPost[] }) {
             </div>
             <div className="mt-2">
               <LikeButton
-                postId={post.id}
-                likedByMe={true}
-                onUnlike={() => handleLikeToggle(post.id)}
+                postId={post.postId}
+                initialLiked={post.likeCount > 0}
+                initialCount={post.likeCount}
+                onToggle={(liked) => {
+                  if (!liked) handleUnlike(post.postId);
+                }}
               />
             </div>
           </div>
         ))}
       </div>
 
-      {/* 스크롤 감지용 div */}
+      {/* 스크롤 감지용 영역 */}
       <div ref={loaderRef} />
 
-      {/* UX 디테일 */}
       {loading && (
-        <div className="text-center text-sm text-gray-400 mt-4">
-          글 불러오는 중...
-        </div>
+        <div className="text-center text-sm text-gray-400 mt-4">로딩 중...</div>
       )}
       {!hasMore && (
         <div className="text-center text-sm text-gray-500 mt-4">

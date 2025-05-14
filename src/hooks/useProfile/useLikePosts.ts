@@ -1,13 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-  fetchLikedPosts,
-    PostsLikedResponse,
-    PostsLikedAndPagingResponse,
-  } from '@/service/posts';
+import { fetchLikedPosts } from '@/service/posts';
+import { PostsLikedAndPagingResponse, PostsLikedResponse } from '@/types/posts';
 
-export function usePosts(pageNumber: number = 0) {
+
+export function useLikePosts(pageNumber: number = 0) {
   const [posts, setPosts] = useState<PostsLikedResponse[]>([]);
   const [pageInfo, setPageInfo] = useState<
     PostsLikedAndPagingResponse['pageInfo'] | null

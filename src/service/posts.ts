@@ -1,72 +1,155 @@
-import { API_URL } from '@/env/constants';
+// src/service/posts.ts
 import { API_BASE } from '@/service/baseAPI';
 import { createClient } from '@/utils/supabase/client';
 import { getSessionOrThrow } from '@/utils/auth';
+import {
+  CreatePostRequest,
+  DeletePostResponse,
+  PageInfo,
+  PostDto,
+  PostListResponse,
+  PostListAndPagingResponse,
+  PostResponse,
+  PostLikeResponse,
+  PostsLikedAndPagingResponse,
+} from '@/types/posts';
 
-// API 응답 예시 스펙에 맞춘 타입 정의
-export interface PostsLikedResponse {
-  boardId: number;
-  boardName: string;
-  postTitle: string;
-  userId: string;
-  viewCount: number;
-  commentCount: number;
-  likeCount: number;
-  createdAt: string; // ISO 문자열
-}
-
-export interface Page {
-  pageNumber: number;
-  size: number;
-  totalElements: number;
-  totalPages: number;
-}
-
-export interface PostsLikedAndPagingResponse {
-  likedPostsResponse: PostsLikedResponse[];
-  pageInfo: Page;
-}
-
-export async function fetchPosts(boardId: string, pageNumber: number = 0) {
-  const res = await fetch(
-    `${API_URL}/posts?boardId=${boardId}&sortBy=createdAt&direction=desc&pageNumber=${pageNumber}&size=10`,
-    {
-      headers: { Authorization: 'Bearer your_token_here' },
-      cache: 'no-store',
-    }
-  );
-  const data = await res.json();
-  return data.PostListDto;
-}
-
-export async function fetchPostDetail(postId: string) {
-  const res = await fetch(`${API_URL}/posts/${postId}`, {
-    headers: { Authorization: 'Bearer your_token_here' },
-  });
-  return res.json();
-}
-
-export async function togglePostLike(postId: string, liked: boolean) {
-  const res = await fetch(`${API_URL}/posts/${postId}/like`, {
-    method: liked ? 'DELETE' : 'POST',
-    headers: { Authorization: 'Bearer your_token_here' },
-  });
-  return res.ok;
-}
-
-// 좋아요한 게시글 불러오기
-export async function fetchLikedPosts(
-  pageNumber: number = 0
-): Promise<PostsLikedAndPagingResponse> {
-
-  // 1) Supabase 세션에서 토큰 가져오기
+// 게시물 생성
+export async function createPost(
+  request: CreatePostRequest
+): Promise<PostResponse> {
   const supabase = createClient();
   const session = await getSessionOrThrow(supabase);
   const token = session.access_token;
 
-  // 2) API 호출
+  const res = await fetch(`${API_BASE}/posts`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(request),
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    throw new Error('게시물 생성에 실패했습니다.');
+  }
+  return res.json();
+}
+
+// 게시물 상세 조회
+export async function getPost(postId: number): Promise<PostResponse> {
+  const res = await fetch(`${API_BASE}/posts/${postId}`, {
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    throw new Error('게시물 조회에 실패했습니다.');
+  }
+  return res.json();
+}
+
+// 게시물 수정
+export async function updatePost(
+  postId: number,
+  request: CreatePostRequest
+): Promise<PostResponse> {
+  const supabase = createClient();
+  const session = await getSessionOrThrow(supabase);
+  const token = session.access_token;
+
+  const res = await fetch(`${API_BASE}/posts/${postId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(request),
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    throw new Error('게시물 수정에 실패했습니다.');
+  }
+  return res.json();
+}
+
+// 게시물 삭제
+export async function deletePost(postId: number): Promise<DeletePostResponse> {
+  const supabase = createClient();
+  const session = await getSessionOrThrow(supabase);
+  const token = session.access_token;
+
+  const res = await fetch(`${API_BASE}/posts/${postId}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    throw new Error('게시물 삭제에 실패했습니다.');
+  }
+  return res.json();
+}
+
+// 게시물 목록 조회
+export async function fetchPostList(params: {
+  boardId: number;
+  postTitle?: string;
+  userId?: string;
+  sortBy?: 'NEWEST' | 'OLDEST';
+  direction?: 'DESC' | 'ASC';
+  pageNumber?: number;
+  size?: number;
+}): Promise<PostListAndPagingResponse> {
+  const query = new URLSearchParams();
+  query.append('boardId', params.boardId.toString());
+  if (params.postTitle) query.append('postTitle', params.postTitle);
+  if (params.userId) query.append('userId', params.userId);
+  if (params.sortBy) query.append('sortBy', params.sortBy);
+  if (params.direction) query.append('direction', params.direction);
+  if (params.pageNumber)
+    query.append('pageNumber', params.pageNumber.toString());
+  if (params.size) query.append('size', params.size.toString());
+
+  const res = await fetch(`${API_BASE}/posts?${query.toString()}`, {
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    throw new Error('게시물 목록을 불러오는 데 실패했습니다.');
+  }
+  return res.json();
+}
+
+// 좋아요 토글
+export async function toggleLike(postId: number): Promise<PostLikeResponse> {
+  const supabase = createClient();
+  const session = await getSessionOrThrow(supabase);
+  const token = session.access_token;
+
+  const res = await fetch(`${API_BASE}/posts/${postId}/like`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    throw new Error('좋아요 처리에 실패했습니다.');
+  }
+  return res.json();
+}
+
+// 좋아요한 게시물 목록 조회
+export async function fetchLikedPosts(
+  pageNumber: number = 1,
+  size: number = 10
+): Promise<PostsLikedAndPagingResponse> {
+  const supabase = createClient();
+  const session = await getSessionOrThrow(supabase);
+  const token = session.access_token;
+
   const res = await fetch(
-    `${API_BASE}/posts/liked?currentPage=${pageNumber}&size=10`,
+    `${API_BASE}/posts/liked?currentPage=${pageNumber}&size=${size}`,
     {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -77,7 +160,5 @@ export async function fetchLikedPosts(
   if (!res.ok) {
     throw new Error('좋아요한 게시글을 불러오는 데 실패했습니다.');
   }
-
-  // 3) 응답 전체를 리턴 (likedPostsResponse  pageInfo)
-  return await res.json();
+  return res.json();
 }

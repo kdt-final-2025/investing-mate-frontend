@@ -1,99 +1,150 @@
+// src/components/posts/CreatePostForm.tsx
 'use client';
 
-import { useState } from 'react';
-import { API_URL } from '@/env/constants';
 import { useRouter } from 'next/navigation';
+import { useForm, useFieldArray } from 'react-hook-form';
+import { createPost } from '@/service/posts';
+import type { CreatePostRequest } from '@/types/posts';
 
-export default function CreatePostForm() {
-  const [postTitle, setPostTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+interface CreatePostFormProps {
+  boardId: number;
+}
+
+// Form input 타입 정의
+interface FormValues {
+  postTitle: string;
+  content: string;
+  imageUrls: { url: string }[];
+}
+
+export default function CreatePostForm({ boardId }: CreatePostFormProps) {
   const router = useRouter();
 
-  const handleCreate = async () => {
-    if (!postTitle.trim()) {
-      alert('제목을 입력해주세요');
-      return;
-    }
+  const {
+    register,
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<FormValues>({
+    defaultValues: {
+      postTitle: '',
+      content: '',
+      imageUrls: [{ url: '' }],
+    },
+  });
 
-    if (!content.trim()) {
-      alert('내용을 입력해주세요');
-      return;
-    }
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'imageUrls',
+  });
 
-    setIsSubmitting(true);
+  const onSubmit = async (data: FormValues) => {
+    const filteredUrls = data.imageUrls
+      .map((item) => item.url.trim())
+      .filter((url) => url);
+    const payload: CreatePostRequest = {
+      boardId,
+      postTitle: data.postTitle,
+      content: data.content,
+      imageUrls: filteredUrls,
+    };
 
     try {
-      const res = await fetch(`${API_URL}/posts`, {
-        method: 'POST',
-        headers: {
-          Authorization: 'Bearer your_token_here',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ postTitle, content, imageUrls: [] }),
-      });
-
-      if (res.ok) {
-        alert('게시글 작성 완료');
-        router.push('/posts');
-      } else {
-        const errorData = await res.json().catch(() => ({}));
-        alert(`작성 실패: ${errorData.message || '알 수 없는 오류'}`);
-      }
-    } catch (error) {
-      console.error('게시글 작성 중 오류 발생:', error);
-      alert('게시글 작성 중 오류가 발생했습니다.');
-    } finally {
-      setIsSubmitting(false);
+      await createPost(payload);
+      router.push(`/boards/${boardId}/posts`);
+    } catch (error: any) {
+      alert(error.message || '게시물 생성 중 오류가 발생했습니다.');
     }
   };
 
   return (
-    <div className="space-y-4">
-      <div>
-        <label htmlFor="postTitle" className="block text-sm font-medium mb-1">
-          제목
-        </label>
-        <input
-          id="postTitle"
-          value={postTitle}
-          onChange={(e) => setPostTitle(e.target.value)}
-          placeholder="제목을 입력하세요"
-          className="w-full bg-[#2A2E39] text-white p-2 rounded border border-[#363A45] focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
+    <main className="min-h-screen bg-[#131722] text-white p-8 flex items-start justify-center">
+      <div className="w-full max-w-3xl">
+        <form onSubmit={handleSubmit(onSubmit)}>
+          {/* 상단 액션 */}
+          <div className="flex justify-between mb-6">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="text-gray-400 hover:text-white"
+            >
+              취소
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="text-indigo-400 hover:text-indigo-200 disabled:opacity-50"
+            >
+              {isSubmitting ? '작성 중...' : '게시'}
+            </button>
+          </div>
 
-      <div>
-        <label htmlFor="content" className="block text-sm font-medium mb-1">
-          내용
-        </label>
-        <textarea
-          id="content"
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="내용을 입력하세요"
-          rows={10}
-          className="w-full bg-[#2A2E39] text-white p-2 rounded border border-[#363A45] resize-y focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
+          {/* 제목 */}
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="제목을 입력하세요"
+              {...register('postTitle', { required: '제목을 입력해주세요' })}
+              className="w-full bg-transparent border-b border-gray-600 focus:outline-none pb-2 text-lg"
+            />
+            {errors.postTitle && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.postTitle.message}
+              </p>
+            )}
+          </div>
 
-      <div className="flex justify-end space-x-3">
-        <button
-          onClick={() => router.back()}
-          className="px-4 py-2 bg-[#363A45] hover:bg-[#404653] rounded-lg text-white transition"
-        >
-          취소
-        </button>
-        <button
-          onClick={handleCreate}
-          disabled={isSubmitting}
-          className={`px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white transition ${
-            isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
-          }`}
-        >
-          {isSubmitting ? '작성 중...' : '작성하기'}
-        </button>
+          {/* 내용 */}
+          <div className="mb-4">
+            <textarea
+              placeholder="내용을 입력하세요"
+              rows={10}
+              {...register('content', { required: '내용을 입력해주세요' })}
+              className="w-full bg-transparent border-b border-gray-600 focus:outline-none pb-2 resize-none"
+            />
+            {errors.content && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.content.message}
+              </p>
+            )}
+          </div>
+
+          {/* 이미지 URL 입력 */}
+          <div className="mb-4">
+            <div className="flex items-center mb-2">
+              <span className="text-gray-400">이미지 URL (선택)</span>
+              {fields.length < 5 && (
+                <button
+                  type="button"
+                  onClick={() => append({ url: '' })}
+                  className="ml-2 text-gray-400 hover:text-white"
+                >
+                  + 추가
+                </button>
+              )}
+            </div>
+            <div className="space-y-2">
+              {fields.map((field, idx) => (
+                <div key={field.id} className="flex items-center">
+                  <input
+                    type="text"
+                    placeholder="https://..."
+                    {...register(`imageUrls.${idx}.url` as const)}
+                    className="flex-1 bg-transparent border-b border-gray-600 focus:outline-none pb-1"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => remove(idx)}
+                    className="ml-2 text-gray-500 hover:text-red-500"
+                  >
+                    삭제
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </form>
       </div>
-    </div>
+    </main>
   );
 }
