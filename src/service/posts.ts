@@ -149,7 +149,7 @@ export async function fetchLikedPosts(
   const token = session.access_token;
 
   const res = await fetch(
-    `${API_BASE}/posts/liked?currentPage=${pageNumber}&size=${size}`,
+    `${API_BASE}/posts/liked?pageNumber=${pageNumber}&size=${size}`,
     {
       headers: {
         Authorization: `Bearer ${token}`,

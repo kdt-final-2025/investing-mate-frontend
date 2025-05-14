@@ -6,7 +6,6 @@ import LoadingWrapper from '@/components/LoadingWrapper';
 import { createClient } from '@/utils/supabase/client';
 import { useUser } from '@/hooks/useProfile/useUser';
 import { useComments } from '@/hooks/useProfile/useComments';
-import { useLikePosts } from '@/hooks/useProfile/useLikePosts';
 import { useReporterApplication } from '@/hooks/useProfile/useReporterApplication';
 
 export default function ProfilePage() {
@@ -14,7 +13,6 @@ export default function ProfilePage() {
   const { avatarUrl, userName, userEmail } = useUser(supabase);
 
   const { comments, loading: loadingComments } = useComments();
-  const { posts, loading: loadingPosts } = useLikePosts();
 
   // useReporterApplication 하나로 isAdmin, isReporter, 로딩, 상태, 핸들러 전부 반환
   const {
@@ -33,7 +31,7 @@ export default function ProfilePage() {
 
   // 전체 로딩 여부
   const isLoading =
-    loadingComments || loadingPosts || loadingAdmin || loadingReporter;
+    loadingComments || loadingAdmin || loadingReporter;
 
   return (
     <LoadingWrapper isLoading={isLoading} error={null}>
@@ -115,44 +113,6 @@ export default function ProfilePage() {
                 ))
               ) : (
                 <p className="text-gray-400">작성한 댓글이 없습니다.</p>
-              )}
-            </section>
-
-            <section className="bg-[#1E222D] rounded-lg p-6 space-y-4">
-              <h2 className="text-xl font-semibold">좋아요한 게시글 목록</h2>
-              {loadingPosts ? (
-                <p className="text-gray-400">불러오는 중…</p>
-              ) : posts && posts.length > 0 ? (
-                // 최신 순 정렬 후 10개만
-                posts
-                  .slice() // 원본 건드리지 않기 위해 얕은 복사
-                  .sort(
-                    (a, b) =>
-                      new Date(b.createdAt).getTime() -
-                      new Date(a.createdAt).getTime()
-                  )
-                  .slice(0, 10)
-                  .map((p) => (
-                    <div
-                      key={p.postId}
-                      className="border-b border-gray-700 pb-2"
-                    >
-                      <Link
-                        href={`/posts/${p.postId}`} // postId 대신 boardId 사용
-                        className="font-medium hover:underline"
-                      >
-                        {p.postTitle} {/* PostsLikedResponse.postTitle */}
-                      </Link>
-                      <div className="text-xs text-gray-500 mt-1">
-                        <span>{new Date(p.createdAt).toLocaleString()}</span>
-                        <span className="ml-2">💬 {p.commentCount}</span>
-                        <span className="ml-2">👍 {p.likeCount}</span>
-                        <span className="ml-2">👁️ {p.viewCount}</span>
-                      </div>
-                    </div>
-                  ))
-              ) : (
-                <p className="text-gray-400">좋아요한 게시글이 없습니다.</p>
               )}
             </section>
           </div>
