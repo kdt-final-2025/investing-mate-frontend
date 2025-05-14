@@ -4,29 +4,37 @@ import React from 'react';
 import { useLikedPosts } from '@/hooks/usePosts/useLikedPosts';
 import type { PostsLikedResponse } from '@/types/posts';
 import LikeButton from '@/components/posts/LikeButton';
+import { PostItem } from '@/components/posts/PostItem';
 
-/**
- * 좋아요한 글 목록 컴포넌트
- * @param pageSize 한 번에 불러올 게시물 개수 (기본값: 10)
- */
-export default function LikedPostList({ pageSize = 10 }: { pageSize?: number }) {
-  const { posts, loading, hasMore, loaderRef, removePost } = useLikedPosts(pageSize);
+interface LikedPostListProps {
+  /** 페이지당 불러올 게시물 개수 */
+  pageSize?: number;
+}
+
+export default function LikedPostList({ pageSize = 10 }: LikedPostListProps) {
+  const { posts, loading, hasMore, loaderRef, removePost } =
+    useLikedPosts(pageSize);
 
   return (
     <div className="container mx-auto p-4">
       <h2 className="text-2xl font-bold mb-4">좋아요한 글 목록</h2>
       <div className="space-y-6">
         {posts.map((post: PostsLikedResponse) => (
-          <div key={post.postId} className="bg-card p-4 rounded-xl shadow">
-            <h3 className="text-lg font-semibold">{post.postTitle}</h3>
-            <div className="mt-2 text-sm text-gray-500 flex space-x-4">
-              <span>{post.boardName}</span>
-              <span>{post.userId}</span>
-              <span>조회수: {post.viewCount}</span>
-              <span>댓글: {post.commentCount}</span>
-              <span>좋아요: {post.likeCount}</span>
-            </div>
-            <div className="mt-3">
+          <div key={post.postId} className="bg-[#1E222D] p-4 rounded-xl shadow">
+            {/* 포스트 아이템 재사용 */}
+            <PostItem
+              post={{
+                id: post.postId,
+                postTitle: post.postTitle,
+                userId: post.userId,
+                viewCount: post.viewCount,
+                commentCount: post.commentCount,
+                likeCount: post.likeCount,
+              }}
+            />
+
+            {/* 좋아요 버튼 왼쪽 정렬 - 카드 안쪽 왼쪽 여백만 적용 */}
+            <div className="mt-4 pl-4">
               <LikeButton
                 postId={post.postId}
                 initialLiked={post.likeCount > 0}

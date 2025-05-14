@@ -13,12 +13,12 @@ import PostEditForm, {
   PostEditFormValues,
 } from '@/components/posts/PostEditForm';
 
-interface Props {
+interface PostProps {
   initialPost: PostResponse;
   postId: string;
 }
 
-export default function Post({ initialPost, postId }: Props) {
+export default function Post({ initialPost, postId }: PostProps) {
   const isAuthor = useIsAuthor(initialPost.userId);
   const [isEditing, setIsEditing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
