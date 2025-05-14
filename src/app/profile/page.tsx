@@ -1,18 +1,14 @@
 // src/app/profile/page.tsx
 'use client';
 
-import Link from 'next/link';
 import LoadingWrapper from '@/components/LoadingWrapper';
 import { createClient } from '@/utils/supabase/client';
 import { useUser } from '@/hooks/useProfile/useUser';
-import { useComments } from '@/hooks/useProfile/useComments';
 import { useReporterApplication } from '@/hooks/useProfile/useReporterApplication';
 
 export default function ProfilePage() {
   const supabase = createClient();
   const { avatarUrl, userName, userEmail } = useUser(supabase);
-
-  const { comments, loading: loadingComments } = useComments();
 
   // useReporterApplication 하나로 isAdmin, isReporter, 로딩, 상태, 핸들러 전부 반환
   const {
@@ -30,8 +26,7 @@ export default function ProfilePage() {
   } = useReporterApplication();
 
   // 전체 로딩 여부
-  const isLoading =
-    loadingComments || loadingAdmin || loadingReporter;
+  const isLoading = loadingAdmin || loadingReporter;
 
   return (
     <LoadingWrapper isLoading={isLoading} error={null}>
@@ -95,27 +90,6 @@ export default function ProfilePage() {
               </button>
             )}
           </section>
-
-          {/* 내 댓글 / 게시글 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <section className="bg-[#1E222D] rounded-lg p-6 space-y-4">
-              <h2 className="text-xl font-semibold">내 댓글</h2>
-              {loadingComments ? (
-                <p className="text-gray-400">불러오는 중…</p>
-              ) : comments.length > 0 ? (
-                comments.map((c) => (
-                  <div key={c.id} className="border-b border-gray-700 pb-2">
-                    <p>{c.content}</p>
-                    <time className="text-xs text-gray-500 block">
-                      {new Date(c.createdAt).toLocaleString()}
-                    </time>
-                  </div>
-                ))
-              ) : (
-                <p className="text-gray-400">작성한 댓글이 없습니다.</p>
-              )}
-            </section>
-          </div>
 
           {/* 에러 모달 */}
           {showError && error && (
