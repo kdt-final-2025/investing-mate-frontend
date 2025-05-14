@@ -2,7 +2,11 @@
 import ClientCompanyDetail from './ClientCompanyDetail'
 import { Metadata } from 'next'
 
-interface Props { params: { symbol: string } }
+interface Props {
+  params: {
+    symbol: string
+  }
+}
 
 export function generateMetadata({ params }: Props): Metadata {
   return {
@@ -13,8 +17,11 @@ export function generateMetadata({ params }: Props): Metadata {
 
 export default async function Page({ params }: Props) {
   const { symbol } = params
-  const base = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8080'
+  const base =
+    process.env.NEXT_PUBLIC_API_BASE_URL ??
+    'http://localhost:8080'
 
+  // 프로필 & 메트릭 동시 호출
   const [resProfile, resMetrics] = await Promise.all([
     fetch(`${base}/api/company/${symbol}`, { cache: 'no-store' }),
     fetch(`${base}/api/company/${symbol}/metrics`, { cache: 'no-store' }),
@@ -33,8 +40,12 @@ export default async function Page({ params }: Props) {
 
   return (
     <main className="min-h-screen bg-[#131722] text-white">
-      {/* 이제 기본 정보 컴포넌트 내부에 차트까지 포함됩니다 */}
-      <ClientCompanyDetail profile={profile} metrics={metrics} />
+      {/* profile, metrics, 그리고 symbol을 ClientCompanyDetail로 전달 */}
+      <ClientCompanyDetail
+        profile={profile}
+        metrics={metrics}
+        symbol={symbol}
+      />
     </main>
   )
 }

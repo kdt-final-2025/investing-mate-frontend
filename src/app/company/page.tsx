@@ -1,8 +1,8 @@
-// src/app/stocks/page.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { createFavoriteStock } from '@/service/favoriteService';
 
 interface Stock {
   name: string;
@@ -24,7 +24,7 @@ export default function StocksPage() {
   const [page, setPage] = useState(1);
   const size = 20;
   const [sortBy, setSortBy] = useState<'id' | 'code' | 'marketCap'>('marketCap');
-  const [order, setOrder] = useState<'desc' | 'asc'>('desc');  // 혹은 'desc' 로 내림차순 기본화
+  const [order, setOrder] = useState<'desc' | 'asc'>('desc');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -137,6 +137,7 @@ export default function StocksPage() {
                 <th className="border-b border-gray-600 px-4 py-2 text-left">심볼</th>
                 <th className="border-b border-gray-600 px-4 py-2 text-left">거래소</th>
                 <th className="border-b border-gray-600 px-4 py-2 text-right">시가총액</th>
+                <th className="border-b border-gray-600 px-4 py-2 text-center">☆</th>
               </tr>
               </thead>
               <tbody>
@@ -152,11 +153,27 @@ export default function StocksPage() {
                   <td className="px-4 py-2 text-right">
                     {s.marketCap != null ? `${s.marketCap.toLocaleString()} $` : '–'}
                   </td>
+                  <td className="px-4 py-2 text-center">
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        try {
+                          await createFavoriteStock({ symbol: s.symbol });
+                          alert(`${s.name}을(를) 관심종목에 추가했습니다.`);
+                        } catch {
+                          alert('관심종목 등록에 실패했습니다.');
+                        }
+                      }}
+                      className="text-2xl leading-none"
+                    >
+                      ☆
+                    </button>
+                  </td>
                 </tr>
               ))}
               {!stocks.length && (
                 <tr>
-                  <td colSpan={4} className="py-4 text-center text-gray-400">
+                  <td colSpan={5} className="py-4 text-center text-gray-400">
                     데이터 없음
                   </td>
                 </tr>
@@ -166,20 +183,12 @@ export default function StocksPage() {
           )}
         </div>
 
-        {/* 페이징 그룹 (5개씩) */}
+        {/* 페이지네이션 */}
         <div className="flex items-center justify-center gap-2">
-          <button
-            onClick={() => setPage(1)}
-            disabled={!hasPrevGroup}
-            className="px-2 py-1 border border-gray-600 rounded disabled:opacity-50"
-          >
+          <button onClick={() => setPage(1)} disabled={!hasPrevGroup} className="px-2 py-1 border border-gray-600 rounded disabled:opacity-50">
             &lt;&lt;
           </button>
-          <button
-            onClick={() => setPage(startPage - 1)}
-            disabled={!hasPrevGroup}
-            className="px-2 py-1 border border-gray-600 rounded disabled:opacity-50"
-          >
+          <button onClick={() => setPage(startPage - 1)} disabled={!hasPrevGroup} className="px-2 py-1 border border-gray-600 rounded disabled:opacity-50">
             &lt;
           </button>
           {Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i).map(num => (
@@ -191,18 +200,10 @@ export default function StocksPage() {
               {num}
             </button>
           ))}
-          <button
-            onClick={() => setPage(endPage + 1)}
-            disabled={!hasNextGroup}
-            className="px-2 py-1 border border-gray-600 rounded disabled:opacity-50"
-          >
+          <button onClick={() => setPage(endPage + 1)} disabled={!hasNextGroup} className="px-2 py-1 border border-gray-600 rounded disabled:opacity-50">
             &gt;
           </button>
-          <button
-            onClick={() => setPage(totalPages)}
-            disabled={!hasNextGroup}
-            className="px-2 py-1 border border-gray-600 rounded disabled:opacity-50"
-          >
+          <button onClick={() => setPage(totalPages)} disabled={!hasNextGroup} className="px-2 py-1 border border-gray-600 rounded disabled:opacity-50">
             &gt;&gt;
           </button>
         </div>
