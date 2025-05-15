@@ -29,10 +29,10 @@ export default function NavBar({
           {/* 데스크탑용 메뉴 (md 이상) */}
           <div className="flex space-x-6 max-md:hidden items-center">
             <Link
-              href="/class"
+              href="/chat"
               className="text-gray-300 hover:text-white text-xs"
             >
-              더 클래스
+              StockAI
             </Link>
             <Link
               href="/market"
