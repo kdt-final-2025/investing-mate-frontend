@@ -3,23 +3,28 @@
 
 import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
-import { createPost } from '@/service/posts';
-import type { CreatePostRequest } from '@/types/posts';
+import { createPost, updatePost } from '@/service/posts';
+import type { CreatePostRequest, PostResponse } from '@/types/posts';
 
 interface CreatePostFormProps {
   boardId: number;
+  postId?: number;
+  initialData?: PostResponse;
 }
 
-// Form input 타입 정의
 interface FormValues {
   postTitle: string;
   content: string;
   imageUrls: { url: string }[];
 }
 
-export default function CreatePostForm({ boardId }: CreatePostFormProps) {
+export default function CreatePostForm({
+  boardId,
+  postId,
+  initialData,
+}: CreatePostFormProps) {
   const router = useRouter();
-
+  const isEdit = Boolean(postId);
   const {
     register,
     control,
@@ -27,9 +32,11 @@ export default function CreatePostForm({ boardId }: CreatePostFormProps) {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     defaultValues: {
-      postTitle: '',
-      content: '',
-      imageUrls: [{ url: '' }],
+      postTitle: initialData?.postTitle || '',
+      content: initialData?.content || '',
+      imageUrls: initialData
+        ? initialData.imageUrls.map((url) => ({ url }))
+        : [{ url: '' }],
     },
   });
 
@@ -48,12 +55,16 @@ export default function CreatePostForm({ boardId }: CreatePostFormProps) {
       content: data.content,
       imageUrls: filteredUrls,
     };
-
     try {
-      await createPost(payload);
-      router.push(`/boards/${boardId}/posts`);
+      if (isEdit && postId) {
+        await updatePost(postId, payload);
+        router.push(`/boards/${boardId}/posts`);
+      } else {
+        const created = await createPost(payload);
+        router.push(`/boards/${boardId}/posts`);
+      }
     } catch (error: any) {
-      alert(error.message || '게시물 생성 중 오류가 발생했습니다.');
+      alert(error.message || '게시물 저장 중 오류가 발생했습니다.');
     }
   };
 
@@ -75,7 +86,13 @@ export default function CreatePostForm({ boardId }: CreatePostFormProps) {
               disabled={isSubmitting}
               className="text-indigo-400 hover:text-indigo-200 disabled:opacity-50"
             >
-              {isSubmitting ? '작성 중...' : '게시'}
+              {isSubmitting
+                ? isEdit
+                  ? '수정 중...'
+                  : '작성 중...'
+                : isEdit
+                  ? '수정'
+                  : '게시'}
             </button>
           </div>
 
