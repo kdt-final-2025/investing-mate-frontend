@@ -1,10 +1,10 @@
-// src/hooks/usePosts.ts
+// src/hooks/usePostsImage.ts
 import { useState } from 'react';
 import type { CreatePostRequest } from '@/types/posts';
 import { createPost, updatePost } from '@/service/posts';
 import { uploadImage } from '@/service/s3';
 
-export function usePosts(boardId: number) {
+export function usePostsImage(boardId: number) {
   const [uploadedUrls, setUploadedUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);

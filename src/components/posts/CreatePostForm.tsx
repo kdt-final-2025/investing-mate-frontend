@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 
 import type { CreatePostRequest, PostResponse } from '@/types/posts';
-import { usePosts } from '@/hooks/usePosts/usePosts';
+import { usePostsImage } from '@/hooks/usePosts/usePostsImage';
 
 interface CreatePostFormProps {
   boardId: number;
@@ -51,7 +51,7 @@ export default function CreatePostForm({
     handleImageUpload,
     handleCreatePost,
     handleUpdatePost,
-  } = usePosts(boardId);
+  } = usePostsImage(boardId);
 
   const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {

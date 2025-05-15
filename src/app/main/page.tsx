@@ -5,7 +5,6 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import LoadingWrapper from '@/components/LoadingWrapper';
 import { useNews } from '@/hooks/useNews';
-import { SupabaseListener } from '@/app/providers/SupabaseListener';
 
 const TradingViewWidget = dynamic(
   () => import('@/components/ui/TradingViewWidget'),
@@ -56,14 +55,6 @@ interface NewsResponse {
 }
 
 export default function Page() {
-  return (
-    <SupabaseListener>
-      <PageContent />
-    </SupabaseListener>
-  );
-}
-
-function PageContent() {
   const { data: marketData, isLoading, error } = useMarketData();
 
   // 추천 뉴스 상태
