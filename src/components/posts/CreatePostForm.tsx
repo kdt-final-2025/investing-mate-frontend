@@ -3,8 +3,9 @@
 
 import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
-import { createPost, updatePost } from '@/service/posts';
+
 import type { CreatePostRequest, PostResponse } from '@/types/posts';
+import { usePosts } from '@/hooks/usePosts/usePosts';
 
 interface CreatePostFormProps {
   boardId: number;
@@ -25,54 +26,60 @@ export default function CreatePostForm({
 }: CreatePostFormProps) {
   const router = useRouter();
   const isEdit = Boolean(postId);
+
   const {
     register,
     control,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
-    defaultValues: {
-      postTitle: initialData?.postTitle || '',
-      content: initialData?.content || '',
-      imageUrls: initialData
-        ? initialData.imageUrls.map((url) => ({ url }))
-        : [{ url: '' }],
-    },
+    defaultValues: initialData
+      ? {
+          postTitle: initialData.postTitle,
+          content: initialData.content,
+          imageUrls: initialData.imageUrls.map((u) => ({ url: u })),
+        }
+      : { postTitle: '', content: '', imageUrls: [] },
   });
-
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'imageUrls',
   });
+  const {
+    uploading,
+    error: uploadError,
+    handleImageUpload,
+    handleCreatePost,
+    handleUpdatePost,
+  } = usePosts(boardId);
+
+  const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.[0]) {
+      const file = e.target.files[0];
+      try {
+        const url = await handleImageUpload(file);
+        append({ url });
+      } catch {}
+    }
+  };
 
   const onSubmit = async (data: FormValues) => {
-    const filteredUrls = data.imageUrls
-      .map((item) => item.url.trim())
-      .filter((url) => url);
+    const urls = data.imageUrls.map((i) => i.url);
     const payload: CreatePostRequest = {
       boardId,
       postTitle: data.postTitle,
       content: data.content,
-      imageUrls: filteredUrls,
+      imageUrls: urls,
     };
-    try {
-      if (isEdit && postId) {
-        await updatePost(postId, payload);
-        router.push(`/boards/${boardId}/posts`);
-      } else {
-        const created = await createPost(payload);
-        router.push(`/boards/${boardId}/posts`);
-      }
-    } catch (error: any) {
-      alert(error.message || '게시물 저장 중 오류가 발생했습니다.');
-    }
+    if (isEdit && postId) await handleUpdatePost(postId, payload);
+    else await handleCreatePost(payload);
+    router.push(`/boards/${boardId}/posts`);
   };
 
   return (
     <main className="min-h-screen bg-[#131722] text-white p-8 flex items-start justify-center">
       <div className="w-full max-w-3xl">
         <form onSubmit={handleSubmit(onSubmit)}>
-          {/* 상단 액션 */}
           <div className="flex justify-between mb-6">
             <button
               type="button"
@@ -96,12 +103,11 @@ export default function CreatePostForm({
             </button>
           </div>
 
-          {/* 제목 */}
           <div className="mb-4">
             <input
               type="text"
               placeholder="제목을 입력하세요"
-              {...register('postTitle', { required: '제목을 입력해주세요' })}
+              {...register('postTitle', { required: '제목 입력 필요' })}
               className="w-full bg-transparent border-b border-gray-600 focus:outline-none pb-2 text-lg"
             />
             {errors.postTitle && (
@@ -111,12 +117,11 @@ export default function CreatePostForm({
             )}
           </div>
 
-          {/* 내용 */}
           <div className="mb-4">
             <textarea
               placeholder="내용을 입력하세요"
               rows={10}
-              {...register('content', { required: '내용을 입력해주세요' })}
+              {...register('content', { required: '내용 입력 필요' })}
               className="w-full bg-transparent border-b border-gray-600 focus:outline-none pb-2 resize-none"
             />
             {errors.content && (
@@ -126,39 +131,37 @@ export default function CreatePostForm({
             )}
           </div>
 
-          {/* 이미지 URL 입력 */}
           <div className="mb-4">
             <div className="flex items-center mb-2">
-              <span className="text-gray-400">이미지 URL (선택)</span>
-              {fields.length < 5 && (
+              <span className="text-gray-400">이미지 업로드</span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={onFileChange}
+                className="ml-4 text-gray-400"
+              />
+            </div>
+            {uploading && <p className="text-yellow-300 mt-2">업로드 중...</p>}
+            {uploadError && <p className="text-red-500 mt-2">{uploadError}</p>}
+          </div>
+
+          <div className="flex flex-wrap gap-2 mb-4">
+            {fields.map((f, i) => (
+              <div key={f.id} className="relative">
+                <img
+                  src={f.url}
+                  alt={`img-${i}`}
+                  className="w-24 h-24 object-cover rounded"
+                />
                 <button
                   type="button"
-                  onClick={() => append({ url: '' })}
-                  className="ml-2 text-gray-400 hover:text-white"
+                  onClick={() => remove(i)}
+                  className="absolute top-0 right-0 bg-red-600 rounded-full p-1"
                 >
-                  + 추가
+                  ✕
                 </button>
-              )}
-            </div>
-            <div className="space-y-2">
-              {fields.map((field, idx) => (
-                <div key={field.id} className="flex items-center">
-                  <input
-                    type="text"
-                    placeholder="https://..."
-                    {...register(`imageUrls.${idx}.url` as const)}
-                    className="flex-1 bg-transparent border-b border-gray-600 focus:outline-none pb-1"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => remove(idx)}
-                    className="ml-2 text-gray-500 hover:text-red-500"
-                  >
-                    삭제
-                  </button>
-                </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         </form>
       </div>
