@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import Link from 'next/link';
+import { API_BASE } from '@/service/baseAPI';
 
 // 타입 정의
 interface Message {
@@ -28,7 +28,7 @@ interface ApiResponse {
   Explanation: string;
 }
 
-// 임시 챗봇 메시지 데이터
+// 초기 데이터
 const initialMessages: Message[] = [
   {
     id: 1,
@@ -38,7 +38,6 @@ const initialMessages: Message[] = [
   },
 ];
 
-// 추천 질문 데이터
 const suggestedQuestions = [
   '고배당 주식 추천해주세요',
   '안전한 투자가 가능한 주식이 있을까요?',
@@ -46,25 +45,20 @@ const suggestedQuestions = [
   '배당률 80% 이상인 주식 있나요?',
 ];
 
-// 위험도 레벨에 따른 색상 매핑
 const riskLevelColors = {
   LOW: 'bg-green-500',
   MEDIUM: 'bg-yellow-500',
   HIGH: 'bg-red-500',
 };
 
-// API 기본 URL (실제 환경에 맞게 변경 필요)
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
-
-const StockChatbotPage = () => {
+export default function Page() {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
-  const [inputValue, setInputValue] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [inputValue, setInputValue] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [stockData, setStockData] = useState<ApiResponse | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // 스크롤을 항상 최신 메시지로 유지
+  // 메시지 변경 시 항상 최신 위치로 스크롤
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -73,23 +67,18 @@ const StockChatbotPage = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
   };
 
-  // 챗봇에 질문하고 주식 추천 받기
   const askForRecommendation = async (
     question: string
   ): Promise<ApiResponse | null> => {
     try {
       setIsLoading(true);
-
-      // API 호출
-      const response = await fetch(`${API_BASE_URL}/chat/recommend`, {
+      const response = await fetch(`${API_BASE}/chat/recommend`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question }),
       });
 
@@ -98,31 +87,22 @@ const StockChatbotPage = () => {
       }
 
       const data: ApiResponse = await response.json();
-
-      // 챗봇 응답 메시지 추가
       const botResponse: Message = {
         id: Date.now(),
         type: 'system',
         message: data.Explanation,
       };
-
       setMessages((prev) => [...prev, botResponse]);
-
-      // 주식 데이터 업데이트
       setStockData(data);
-
       return data;
     } catch (error) {
       console.error('API 호출 중 오류 발생:', error);
-
-      // 오류 메시지 추가
       const errorMessage: Message = {
         id: Date.now(),
         type: 'system',
         message:
           '죄송합니다. 요청을 처리하는 중 오류가 발생했습니다. 다시 시도해 주세요.',
       };
-
       setMessages((prev) => [...prev, errorMessage]);
       return null;
     } finally {
@@ -130,77 +110,57 @@ const StockChatbotPage = () => {
     }
   };
 
-  const handleSubmit = async (): Promise<void> => {
+  const handleSubmit = async () => {
     if (!inputValue.trim()) return;
-
-    // 사용자 메시지 추가
     const userMessage: Message = {
       id: Date.now(),
       type: 'user',
       message: inputValue,
     };
-
     setMessages((prev) => [...prev, userMessage]);
-
-    // 입력값 미리 저장
     const question = inputValue;
-
-    // 입력창 초기화
     setInputValue('');
-
-    // API 호출 및 응답 처리
     await askForRecommendation(question);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>): void => {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       handleSubmit();
     }
   };
 
-  const handleSuggestedQuestion = async (question: string): Promise<void> => {
-    // 사용자 메시지 추가
+  const handleSuggestedQuestion = async (question: string) => {
     const userMessage: Message = {
       id: Date.now(),
       type: 'user',
       message: question,
     };
-
     setMessages((prev) => [...prev, userMessage]);
-
-    // API 호출 및 응답 처리
     await askForRecommendation(question);
   };
 
-  // 번호 형식 포맷팅
-  const formatNumber = (num: number): string => {
-    return new Intl.NumberFormat('ko-KR', {
+  const formatNumber = (num: number): string =>
+    new Intl.NumberFormat('ko-KR', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(num);
-  };
 
-  // 백분율 형식 포맷팅
-  const formatPercent = (num: number): string => {
-    return new Intl.NumberFormat('ko-KR', {
+  const formatPercent = (num: number): string =>
+    new Intl.NumberFormat('ko-KR', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(num);
-  };
 
   return (
     <main className="min-h-screen bg-[#131722] text-white">
       <div className="container mx-auto p-4">
         {/* 상단 네비게이션 */}
         <div className="flex items-center justify-between mb-6">
-          <Link
-            href="/"
-            className="text-2xl md:text-3xl font-bold flex items-center"
-          >
+          <h1 className="text-2xl md:text-3xl font-bold flex items-center">
             <span className="text-red-600">Stock</span>
             <span>AI</span>
-          </Link>
+          </h1>
           <div className="flex items-center space-x-2">
             <span className="text-gray-400">
               {new Date().toLocaleDateString()}
@@ -377,6 +337,4 @@ const StockChatbotPage = () => {
       </div>
     </main>
   );
-};
-
-export default StockChatbotPage;
+}
