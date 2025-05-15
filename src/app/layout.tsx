@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
-import { SupabaseListener } from '@/app/providers/SupabaseListener';
 import ClientNavWrapper from '@/components/ClientNavWrapper';
 
 const geistSans = Geist({
@@ -28,11 +27,9 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body>
-        <SupabaseListener>
-          {/* 레이아웃 최상단에 네비바 */}
-          <ClientNavWrapper />
-          {children}
-        </SupabaseListener>
+        {/* 레이아웃 최상단에 네비바 */}
+        <ClientNavWrapper />
+        {children}
       </body>
     </html>
   );
