@@ -1,5 +1,5 @@
 // src/service/s3.ts
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+import { API_BASE } from './baseAPI'; // 기존 env 직접 참조 대신 공통 상수로 통일
 
 export async function uploadImage(file: File): Promise<string> {
   const formData = new FormData();
@@ -18,8 +18,17 @@ export async function uploadImage(file: File): Promise<string> {
     return data.imageUrl;
   } else {
     const text = await res.text();
-    // 텍스트에서 URL 부분만 추출
     const match = text.match(/https?:\/\/\S+/);
     return match ? match[0] : text.trim();
+  }
+}
+
+export async function deleteImage(key: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/s3/upload/${key}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || `이미지 삭제 에러: ${res.status}`);
   }
 }

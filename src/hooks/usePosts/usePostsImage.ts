@@ -1,11 +1,10 @@
-// src/hooks/usePostsImage.ts
+// src/hooks/usePosts/usePostsImage.ts
 import { useState } from 'react';
 import type { CreatePostRequest } from '@/types/posts';
 import { createPost, updatePost } from '@/service/posts';
-import { uploadImage } from '@/service/s3';
+import { uploadImage, deleteImage } from '@/service/s3';
 
 export function usePostsImage(boardId: number) {
-  const [uploadedUrls, setUploadedUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -13,9 +12,7 @@ export function usePostsImage(boardId: number) {
     setUploading(true);
     setError(null);
     try {
-      const url = await uploadImage(file);
-      setUploadedUrls((prev) => [...prev, url]);
-      return url;
+      return await uploadImage(file);
     } catch (e: any) {
       setError(e.message);
       throw e;
@@ -24,37 +21,33 @@ export function usePostsImage(boardId: number) {
     }
   };
 
-  const handleCreatePost = async (data: {
-    postTitle: string;
-    content: string;
-  }) => {
-    const payload: CreatePostRequest = {
-      boardId,
-      postTitle: data.postTitle,
-      content: data.content,
-      imageUrls: uploadedUrls,
-    };
-    return await createPost(payload);
+  const handleImageDelete = async (key: string): Promise<void> => {
+    setUploading(true);
+    setError(null);
+    try {
+      await deleteImage(key);
+    } catch (e: any) {
+      setError(e.message);
+      throw e;
+    } finally {
+      setUploading(false);
+    }
   };
 
-  const handleUpdatePost = async (
-    postId: number,
-    data: { postTitle: string; content: string }
-  ) => {
-    const payload: CreatePostRequest = {
-      boardId,
-      postTitle: data.postTitle,
-      content: data.content,
-      imageUrls: uploadedUrls,
-    };
-    return await updatePost(postId, payload);
+  // now accepts full payload
+  const handleCreatePost = (payload: CreatePostRequest) => {
+    return createPost(payload);
+  };
+
+  const handleUpdatePost = (postId: number, payload: CreatePostRequest) => {
+    return updatePost(postId, payload);
   };
 
   return {
-    uploadedUrls,
     uploading,
     error,
     handleImageUpload,
+    handleImageDelete,
     handleCreatePost,
     handleUpdatePost,
   };

@@ -4,14 +4,8 @@
 import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import type { CreatePostRequest, PostResponse } from '@/types/posts';
-import { ImageUpload } from '@/components/posts/ImageUpload';
 import { usePostsImage } from '@/hooks/usePosts/usePostsImage';
-
-interface CreatePostFormProps {
-  boardId: number;
-  postId?: number;
-  initialData?: PostResponse;
-}
+import { ImageUpload } from '@/components/posts/ImageUpload';
 
 interface FormValues {
   postTitle: string;
@@ -23,7 +17,11 @@ export default function CreatePostForm({
   boardId,
   postId,
   initialData,
-}: CreatePostFormProps) {
+}: {
+  boardId: number;
+  postId?: number;
+  initialData?: PostResponse;
+}) {
   const router = useRouter();
   const isEdit = Boolean(postId);
 
@@ -49,18 +47,19 @@ export default function CreatePostForm({
   const { handleCreatePost, handleUpdatePost } = usePostsImage(boardId);
 
   const onSubmit = async (data: FormValues) => {
-    const urls = data.imageUrls.map((i) => i.url);
     const payload: CreatePostRequest = {
       boardId,
       postTitle: data.postTitle,
       content: data.content,
-      imageUrls: urls,
+      imageUrls: data.imageUrls.map((i) => i.url),
     };
+
     if (isEdit && postId) {
       await handleUpdatePost(postId, payload);
     } else {
       await handleCreatePost(payload);
     }
+
     router.push(`/boards/${boardId}/posts`);
   };
 
@@ -122,7 +121,7 @@ export default function CreatePostForm({
             )}
           </div>
 
-          {/* 이미지 업로드 컴포넌트 */}
+          {/* 이미지 업로드 */}
           <ImageUpload
             boardId={boardId}
             fields={fields}
