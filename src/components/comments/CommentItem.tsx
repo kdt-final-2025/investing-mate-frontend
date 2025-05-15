@@ -1,20 +1,20 @@
 'use client';
 import React, { useState } from 'react';
 import {
-  Comment,
   deleteComment,
   updateComment,
   likeComment,
 } from '../../service/comments';
-import { CreateCommentRequest } from '@/types/comments';
+import { CreateCommentRequest, CommentResponse } from '@/types/comments';
 import CommentForm from './CommentForm';
 
 interface Props {
-  comment: Comment;
-  postId: string;
-  onDeleted: (id: string) => void;
-  onUpdated: (c: Comment) => void;
-  onLiked: (c: Comment) => void;
+  comment: CommentResponse;
+  postId: number;
+  onDeleted: (id: number) => void;
+  onUpdated: (c: CommentResponse) => void;
+  onLiked: (c: CommentResponse) => void;
+  onCreated?: (newComment: CommentResponse) => void;
 }
 
 export default function CommentItem({
@@ -23,7 +23,11 @@ export default function CommentItem({
   onDeleted,
   onUpdated,
   onLiked,
+  onCreated,
 }: Props) {
+  // 답글 여부 확인: 부모 댓글이 없는 경우에만 답글을 달 수 있음
+  const isReply = !!comment.parentId;
+
   const [isEditing, setIsEditing] = useState(false);
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [text, setText] = useState(comment.content);
@@ -41,8 +45,8 @@ export default function CommentItem({
     setError(null);
 
     try {
-      await deleteComment(comment.id);
-      onDeleted(comment.id);
+      await deleteComment(comment.commentId);
+      onDeleted(comment.commentId);
     } catch (err) {
       console.error('댓글 삭제 실패:', err);
       setError('댓글 삭제에 실패했습니다.');
@@ -61,12 +65,11 @@ export default function CommentItem({
 
     const request: CreateCommentRequest = {
       postId,
-      parentId: comment.parentId ?? null,
       content: text,
     };
 
     try {
-      await updateComment(String(comment.id), request);
+      await updateComment(comment.commentId, request);
       onUpdated({
         ...comment,
         content: text,
@@ -87,7 +90,7 @@ export default function CommentItem({
     setError(null);
 
     try {
-      const result = await likeComment(String(comment.id));
+      const result = await likeComment(comment.commentId);
       onLiked({
         ...comment,
         likeCount: result.likeCount,
@@ -101,14 +104,19 @@ export default function CommentItem({
     }
   };
 
-  const handleReplyCreated = (newComment: Comment) => {
+  const handleReplyCreated = (newComment: CommentResponse) => {
     // 새 답글 추가
-    const updatedReplies = [...(comment.replies || []), newComment];
+    const updatedChildren = [...(comment.children || []), newComment];
     onUpdated({
       ...comment,
-      replies: updatedReplies,
+      children: updatedChildren,
     });
     setShowReplyForm(false);
+
+    // 상위 onCreated 핸들러가 있다면 호출
+    if (onCreated) {
+      onCreated(newComment);
+    }
   };
 
   // 시간 형식 포맷팅
@@ -130,7 +138,7 @@ export default function CommentItem({
   return (
     <div className="bg-[#1E222D] p-4 rounded-lg border border-[#363A45]">
       <div className="flex justify-between">
-        <span className="text-sm font-medium text-white">{comment.author}</span>
+        <span className="text-sm font-medium text-white">{comment.userId}</span>
         <span className="text-xs text-gray-400">
           {formatDate(comment.createdAt)}
         </span>
@@ -184,12 +192,15 @@ export default function CommentItem({
           <span>{comment.likeCount}</span>
         </button>
 
-        <button
-          onClick={() => setShowReplyForm(!showReplyForm)}
-          className="text-gray-400 hover:text-white"
-        >
-          답글
-        </button>
+        {/* 최상위 댓글인 경우에만 답글 버튼을 렌더링 */}
+        {!isReply && (
+          <button
+            onClick={() => setShowReplyForm(!showReplyForm)}
+            className="text-gray-400 hover:text-white"
+          >
+            답글
+          </button>
+        )}
 
         <button
           onClick={() => setIsEditing(true)}
@@ -211,22 +222,24 @@ export default function CommentItem({
         <div className="ml-4 mt-3 border-l-2 border-gray-700 pl-3">
           <CommentForm
             postId={postId}
-            parentId={comment.id}
+            parentId={comment.commentId}
             onCreated={handleReplyCreated}
           />
         </div>
       )}
 
-      {comment.replies && comment.replies.length > 0 && (
+      {/* 자식 댓글(답글) 렌더링 */}
+      {comment.children && comment.children.length > 0 && (
         <div className="ml-4 mt-4 space-y-3 border-l-2 border-gray-700 pl-3">
-          {comment.replies.map((reply) => (
+          {comment.children.map((reply) => (
             <CommentItem
-              key={reply.id}
+              key={reply.commentId}
               comment={reply}
               postId={postId}
               onDeleted={onDeleted}
               onUpdated={onUpdated}
               onLiked={onLiked}
+              onCreated={onCreated}
             />
           ))}
         </div>

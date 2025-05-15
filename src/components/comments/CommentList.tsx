@@ -1,153 +1,208 @@
 'use client';
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { Comment, commentList } from '@/service/comments';
+import { commentList } from '@/service/comments';
+import { CommentResponse } from '@/types/comments';
 import CommentItem from './CommentItem';
 import CommentForm from './CommentForm';
 
 interface Props {
   userId: string;
-  postId: string;
-  size: string;
-  pageNumber: string;
+  sortType: string;
+  postId: number;
+  size: number;
+  pageNumber?: number;
 }
 
 export default function CommentList({
   userId,
   postId,
-  size,
-  pageNumber,
+  sortType,
+  size = 150,
 }: Props) {
-  const [comments, setComments] = useState<Comment[]>([]);
+  const [comments, setComments] = useState<CommentResponse[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const loaderRef = useRef<HTMLDivElement | null>(null);
-  const observerRef = useRef<IntersectionObserver | null>(null);
+  const loaderRef = useRef<HTMLDivElement>(null);
+  const observerRef = useRef<IntersectionObserver>();
 
+  // 상태 초기화: postId나 sortType가 바뀔 때 댓글과 페이지 정보를 리셋
+  useEffect(() => {
+    setComments([]);
+    setPage(1);
+    setHasMore(true);
+    setError(null);
+  }, [postId, sortType]);
+
+  // 페이지 번호(page)가 바뀔 때마다 댓글을 불러옴
+  useEffect(() => {
+    loadComments();
+  }, [page]);
+
+  // 댓글 데이터를 불러오는 API 호출 함수
   const loadComments = useCallback(async () => {
-    if (loading || !hasMore) return;
-
+    if (loading || !hasMore) return; // API 중복 호출 방지 및 더 불러올 데이터가 없으면 중단
     setLoading(true);
     setError(null);
-
     try {
-      const data = await commentList(userId, postId, size, pageNumber);
-
-      const mappedComments: Comment[] = data.items.map((item) => ({
-        id: item.commentId,
-        content: item.content,
-        author: item.userId,
-        createdAt: item.createdAt,
-        likeCount: item.likeCount,
-        likedByMe: item.likedByMe,
-      }));
-
-      setComments((prev) => [...prev, ...mappedComments]);
-      setHasMore(page < data.pageMeta.totalPage);
-
-      if (page < data.pageMeta.totalPage) {
-        setPage((prev) => prev + 1);
+      const data = await commentList(postId, sortType, size, page);
+      if (page === 1) {
+        // 첫 페이지인 경우 기존 댓글을 교체
+        setComments(data.items);
+      } else {
+        // 이후 페이지인 경우 중복 제거 후 추가
+        setComments((prev) => {
+          const existingIds = new Set(prev.map((c) => c.commentId));
+          const newItems = data.items.filter(
+            (c) => !existingIds.has(c.commentId)
+          );
+          return [...prev, ...newItems];
+        });
+      }
+      // 페이지 정보에 따라 더 불러올 댓글이 있는지 결정
+      if (data.pageMeta.pageNumber < data.pageMeta.totalPage) {
+        setHasMore(true);
+      } else {
+        setHasMore(false);
       }
     } catch (e) {
       console.error(e);
       setError('댓글을 불러오는데 실패했습니다.');
     } finally {
-      setLoading(false); // ✅ 반드시 필요!
+      setLoading(false);
     }
-  }, [postId, page, loading, hasMore]);
-  // 처음 마운트 시 댓글 로드
+  }, [postId, sortType, size, page, loading, hasMore]);
+
+  // 무한 스크롤: loaderRef에 연결된 요소가 화면에 보이면 page를 증가시킴
   useEffect(() => {
-    loadComments();
-  }, []);
-
-  // IntersectionObserver 설정
-  useEffect(() => {
-    if (!loaderRef.current) return;
-
-    // 기존 observer 정리
-    if (observerRef.current) {
-      observerRef.current.disconnect();
-    }
-
+    const element = loaderRef.current;
+    if (!element) return;
+    observerRef.current?.disconnect();
     observerRef.current = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && !loading && hasMore) {
-          loadComments();
+          setPage((prev) => prev + 1);
         }
       },
       { threshold: 0.1 }
     );
+    observerRef.current.observe(element);
+    return () => observerRef.current?.disconnect();
+  }, [loading, hasMore]);
 
-    observerRef.current.observe(loaderRef.current);
-
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
-    };
-  }, [loadComments, loading, hasMore]);
-
-  const handleCreated = (newComment: Comment) => {
-    // 새 댓글은 맨 위에 추가
-    setComments((prev) => [newComment, ...prev]);
+  // 댓글 생성 핸들러: 최상위 댓글은 바로 추가, 대댓글은 전체 목록을 새로 불러오도록 함
+  const handleCreated = (newComment: CommentResponse) => {
+    if (!newComment.parentId) {
+      setComments((prev) => [newComment, ...prev]);
+    } else {
+      setPage(1);
+      setHasMore(true);
+      // page가 초기화되면 useEffect에서 loadComments가 호출되어 전체 댓글이 새로 로드됨
+    }
   };
 
-  const handleDeleted = (id: string) => {
-    setComments((prev) => prev.filter((c) => c.id !== id));
+  // 댓글 삭제 핸들러: 최상위 댓글 및 자식 댓글 모두에서 삭제 처리
+  const handleDeleted = (id: number) => {
+    setComments((prev) => {
+      const newComments = prev.filter((c) => c.commentId !== id);
+      return newComments.map((comment) => ({
+        ...comment,
+        children: comment.children
+          ? comment.children.filter((c) => c.commentId !== id)
+          : [],
+      }));
+    });
   };
 
-  const handleUpdated = (updated: Comment) => {
-    setComments((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+  // 댓글 업데이트 핸들러: 댓글 또는 자식 댓글 중 업데이트 대상 찾기
+  const handleUpdated = (updated: CommentResponse) => {
+    setComments((prev) =>
+      prev.map((comment) => {
+        if (comment.commentId === updated.commentId) {
+          return updated;
+        }
+        if (comment.children && comment.children.length > 0) {
+          return {
+            ...comment,
+            children: comment.children.map((child) =>
+              child.commentId === updated.commentId ? updated : child
+            ),
+          };
+        }
+        return comment;
+      })
+    );
   };
 
-  const handleLiked = (updated: Comment) => {
-    setComments((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+  // 댓글 좋아요 핸들러: 댓글 및 자식 댓글 업데이트
+  const handleLiked = (updated: CommentResponse) => {
+    setComments((prev) =>
+      prev.map((comment) => {
+        if (comment.commentId === updated.commentId) {
+          return {
+            ...comment,
+            likeCount: updated.likeCount,
+            likedByMe: updated.likedByMe,
+          };
+        }
+        if (comment.children && comment.children.length > 0) {
+          return {
+            ...comment,
+            children: comment.children.map((child) =>
+              child.commentId === updated.commentId
+                ? {
+                    ...child,
+                    likeCount: updated.likeCount,
+                    likedByMe: updated.likedByMe,
+                  }
+                : child
+            ),
+          };
+        }
+        return comment;
+      })
+    );
   };
 
   return (
     <div className="space-y-4">
-      {/* 댓글 작성 폼 */}
+      {/* 최상위 댓글 작성 폼 */}
       <CommentForm postId={postId} onCreated={handleCreated} />
 
-      {/* 댓글이 없을 때 */}
+      {/* 댓글이 없을 때 표시 */}
       {!loading && comments.length === 0 && (
         <div className="text-center text-sm text-gray-400 py-4">
-          아직 댓글이 없습니다. 첫 댓글을 남겨보세요!
+          아직 댓글이 없습니다.
         </div>
       )}
 
-      {/* 댓글 목록 */}
+      {/* 댓글 목록 렌더링 */}
       <div className="space-y-4">
         {comments.map((comment) => (
           <CommentItem
-            key={comment.id}
+            key={comment.commentId}
             comment={comment}
             postId={postId}
             onDeleted={handleDeleted}
             onUpdated={handleUpdated}
             onLiked={handleLiked}
+            onCreated={handleCreated}
           />
         ))}
       </div>
 
-      {/* 스크롤 감지용 div */}
+      {/* 무한 스크롤 감지를 위한 요소 */}
       <div ref={loaderRef} className="h-10" />
 
-      {/* 로딩 상태 표시 */}
-      {loading && (
-        <div className="text-center text-sm text-gray-400 py-2">
-          댓글 불러오는 중...
-        </div>
-      )}
+      {/* 로딩 상태 */}
+      {loading && <div className="text-center py-2">댓글 불러오는 중...</div>}
 
       {/* 에러 메시지 */}
-      {error && (
-        <div className="text-center text-sm text-red-500 py-2">{error}</div>
-      )}
+      {error && <div className="text-center text-red-500 py-2">{error}</div>}
 
-      {/* 더 이상 댓글이 없을 때 */}
+      {/* 모든 댓글을 불러온 경우 메시지 */}
       {!hasMore && comments.length > 0 && (
         <div className="text-center text-sm text-gray-500 py-2">
           모든 댓글을 불러왔습니다.

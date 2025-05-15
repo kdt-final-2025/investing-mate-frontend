@@ -1,11 +1,12 @@
 'use client';
 import React, { useState } from 'react';
-import { Comment, createComment } from '../../service/comments';
-import { CreateCommentRequest } from '@/types/comments';
+import { createComment } from '../../service/comments';
+import { CreateCommentRequest, CommentResponse } from '@/types/comments';
+
 interface Props {
-  postId: string;
-  parentId?: string;
-  onCreated: (newComment: Comment) => void;
+  postId: number;
+  parentId?: number;
+  onCreated: (newComment: CommentResponse) => void;
 }
 
 export default function CommentForm({ postId, parentId, onCreated }: Props) {
@@ -13,8 +14,8 @@ export default function CommentForm({ postId, parentId, onCreated }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // 댓글 제출 처리 로직(제출 버튼과 엔터키 이벤트 모두에서 호출 가능)
+  const submitComment = async () => {
     if (!content.trim()) return;
 
     setLoading(true);
@@ -22,27 +23,46 @@ export default function CommentForm({ postId, parentId, onCreated }: Props) {
 
     try {
       const request: CreateCommentRequest = {
-        postId: postId,
+        postId,
         content,
-        ...(parentId && { parentId }), // parentId가 있을 때만 포함
+        ...(parentId && { parentId }), // parentId가 있을 경우에만 포함
       };
 
+      console.log('댓글 요청 데이터:', request);
+
       const response = await createComment(request);
-      const newComment: Comment = {
-        id: response.commentId,
-        content: response.content,
-        author: response.userId,
-        createdAt: response.createdAt,
-        likeCount: response.likeCount,
-        likedByMe: response.likedByMe,
+      console.log('서버 응답:', response);
+
+      if (!response || typeof response !== 'object') {
+        throw new Error('서버 응답 데이터가 올바르지 않습니다.');
+      }
+
+      const responseWithChildren = {
+        ...response,
+        children: response.children || [],
       };
-      onCreated(newComment); // 이 부분도 Comment 타입으로 수정 필요할 수 있음
+
+      onCreated(responseWithChildren);
       setContent('');
     } catch (err) {
       console.error('댓글 작성 실패:', err);
       setError('댓글 작성에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 폼 제출 이벤트 핸들러
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await submitComment();
+  };
+
+  // 엔터키 입력 시 제출 처리(Shift+Enter는 줄바꿈)
+  const handleKeyDown = async (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      await submitComment();
     }
   };
 
@@ -53,6 +73,7 @@ export default function CommentForm({ postId, parentId, onCreated }: Props) {
         placeholder={parentId ? '댓글에 답변하기...' : '댓글 작성하기...'}
         value={content}
         onChange={(e) => setContent(e.currentTarget.value)}
+        onKeyDown={handleKeyDown}
         disabled={loading}
         rows={3}
         required

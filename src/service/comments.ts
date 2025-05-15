@@ -1,5 +1,5 @@
+// service/comments.ts
 import axios from 'axios';
-import { API_URL } from '@/env/constants';
 import { createClient } from '@/utils/supabase/client';
 import {
   CommentResponse,
@@ -8,38 +8,18 @@ import {
   CommentLikeResponse,
 } from '@/types/comments';
 import { getSessionOrThrow } from '@/utils/auth';
-// 댓글 및 대댓글 인터페이스
-export interface Comment {
-  id: string;
-  content: string;
-  author: string;
-  createdAt: string;
-  likeCount: number;
-  likedByMe: boolean;
-  parentId?: string;
-  replies?: Comment[]; // 대댓글 배열
-}
+import { API_BASE } from '@/service/baseAPI';
 
-export interface PaginatedCommentResponse {
-  totalPage: number;
-  totalCount: number;
-  pageNumber: number;
-  pageSize: number;
-  items: Comment[];
-}
 /**
- * 좋아요순 또는 최신순 정렬된 댓글+대댓글 조회 (페이징 포함)
- * 백엔드: GET /comments/likes
+ * 댓글 생성 (대댓글 포함)
  */
-
-// 댓글 생성 (대댓글 포함)
 export async function createComment(
   request: CreateCommentRequest
 ): Promise<CommentResponse> {
   const supabase = createClient();
   const session = await getSessionOrThrow(supabase);
   const token = session.access_token;
-  const res = await axios.post(`${API_URL}/comments`, request, {
+  const res = await axios.post(`${API_BASE}/comments`, request, {
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
@@ -48,33 +28,17 @@ export async function createComment(
   return res.data;
 }
 
-//댓글 수정
+/**
+ * 댓글 수정
+ */
 export async function updateComment(
-  commentId: string,
+  commentId: number,
   request: CreateCommentRequest
 ): Promise<void> {
   const supabase = createClient();
   const session = await getSessionOrThrow(supabase);
   const token = session.access_token;
-  const res = await axios.put(
-    `${API_URL}/comments/${parseInt(commentId)}`,
-    request,
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
-  return res.data;
-}
-
-// 댓글 삭제
-export async function deleteComment(commentId: string): Promise<void> {
-  const supabase = createClient();
-  const session = await getSessionOrThrow(supabase);
-  const token = session.access_token;
-  const res = await axios.delete(`${API_URL}/comments/${parseInt(commentId)}`, {
+  const res = await axios.put(`${API_BASE}/comments/${commentId}`, request, {
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
@@ -83,15 +47,35 @@ export async function deleteComment(commentId: string): Promise<void> {
   return res.data;
 }
 
-// 댓글 좋아요 토글
+/**
+ * 댓글 삭제
+ */
+export async function deleteComment(commentId: number): Promise<void> {
+  const supabase = createClient();
+  const session = await getSessionOrThrow(supabase);
+  const token = session.access_token;
+  const res = await axios.delete(`${API_BASE}/comments/${commentId}`, {
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  console.log('Deleting commentId:', commentId);
+  return res.data;
+}
+
+/**
+ * 댓글 좋아요 토글
+ */
 export async function likeComment(
-  commentId: string
+  commentId: number
 ): Promise<CommentLikeResponse> {
   const supabase = createClient();
   const session = await getSessionOrThrow(supabase);
   const token = session.access_token;
   const res = await axios.post(
-    `${API_URL}/comments/${parseInt(commentId)}/likes`,
+    `${API_BASE}/comments/${commentId}/likes`,
+    {},
     {
       headers: {
         'Content-Type': 'application/json',
@@ -101,17 +85,21 @@ export async function likeComment(
   );
   return res.data;
 }
-//댓글 조회
+
+/**
+ * 댓글 조회 (페이징)
+ * 백엔드에서 제공하는 트리 구조를 그대로 사용
+ */
 export async function commentList(
-  postId: string,
+  postId: number,
   sortType: string,
-  size: string,
-  pageNumber: string
+  size: number,
+  pageNumber: number
 ): Promise<CommentResponseAndPaging> {
   const supabase = createClient();
   const session = await getSessionOrThrow(supabase);
   const token = session.access_token;
-  const res = await axios.get(`${API_URL}/comments`, {
+  const res = await axios.get(`${API_BASE}/comments`, {
     params: {
       postId,
       sortType,

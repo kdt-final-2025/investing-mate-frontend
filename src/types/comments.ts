@@ -1,32 +1,35 @@
-export interface CommentLikeResponse {
-  commentId: number | undefined;
-  likeCount: number;
-  likedByMe: boolean;
-}
-
+// types/comments.ts
 export interface CommentResponse {
-  commentId: string;
+  commentId: number;
   userId: string;
   content: string;
   likeCount: number;
   likedByMe: boolean;
+  parentId: number | null; // 부모 댓글 ID (null이면 최상위 댓글)
   createdAt: string;
-  children: Comment[];
+  children: CommentResponse[]; // 자식 댓글 배열
 }
 
-export interface Pagemeta {
+export interface PageMeta {
   totalPage: number;
   totalCount: number;
   pageNumber: number;
   pageSize: number;
 }
+
 export interface CommentResponseAndPaging {
   items: CommentResponse[];
-  pageMeta: Pagemeta;
+  pageMeta: PageMeta;
 }
 
 export interface CreateCommentRequest {
-  postId: string;
-  parentId?: string | null;
+  postId: number;
+  parentId?: number | null; // 부모 댓글 ID (null이면 최상위 댓글)
   content: string;
+}
+
+export interface CommentLikeResponse {
+  commentId: number;
+  likeCount: number;
+  likedByMe: boolean;
 }
