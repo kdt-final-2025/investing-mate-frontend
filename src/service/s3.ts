@@ -1,34 +1,36 @@
-// src/service/s3.ts
-import { API_BASE } from './baseAPI'; // 기존 env 직접 참조 대신 공통 상수로 통일
+// src/apps/s3.ts (프론트엔드 함수)
+import { API_BASE } from '@/service/baseAPI';
 
+/**
+ * 파일을 S3에 업로드하고, 반환된 imageUrl을 리턴합니다.
+ */
 export async function uploadImage(file: File): Promise<string> {
   const formData = new FormData();
   formData.append('file', file);
+
   const res = await fetch(`${API_BASE}/s3/upload`, {
     method: 'POST',
     body: formData,
   });
+
   if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText || `이미지 업로드 에러: ${res.status}`);
-  }
-  const contentType = res.headers.get('content-type') || '';
-  if (contentType.includes('application/json')) {
-    const data = await res.json();
-    return data.imageUrl;
-  } else {
     const text = await res.text();
-    const match = text.match(/https?:\/\/\S+/);
-    return match ? match[0] : text.trim();
+    throw new Error(text || 'Upload failed');
   }
+
+  const { imageUrl } = await res.json();
+  return imageUrl;
 }
 
-export async function deleteImage(key: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/s3/upload/${key}`, {
-    method: 'DELETE',
-  });
+/**
+ * imageUrl을 파라미터로 받아 S3 객체를 삭제하는 함수입니다.
+ */
+export async function deleteImage(imageUrl: string): Promise<void> {
+  const res = await fetch(
+    `${API_BASE}/s3/delete?imageUrl=${encodeURIComponent(imageUrl)}`,
+    { method: 'DELETE' }
+  );
   if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText || `이미지 삭제 에러: ${res.status}`);
+    throw new Error('Delete failed');
   }
 }
