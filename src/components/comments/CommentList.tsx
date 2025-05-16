@@ -1,8 +1,13 @@
 'use client';
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { commentList } from '@/service/comments';
-import { CommentResponse } from '@/types/comments';
+import {
+  commentList,
+  deleteComment,
+  updateComment,
+  likeComment,
+} from '@/service/comments';
+import { CommentResponse, CreateCommentRequest } from '@/types/comments';
 import CommentItem from './CommentItem';
 import CommentForm from './CommentForm';
 
@@ -38,7 +43,15 @@ export default function CommentList({
 
   // 페이지 번호(page)가 바뀔 때마다 댓글을 불러옴
   useEffect(() => {
-    loadComments();
+    if (page === 1) {
+      loadComments();
+    }
+  }, [postId, sortType]);
+
+  useEffect(() => {
+    if (page !== 1) {
+      loadComments();
+    }
   }, [page]);
 
   // 댓글 데이터를 불러오는 API 호출 함수
@@ -103,62 +116,126 @@ export default function CommentList({
     }
   };
 
-  // 댓글 삭제 핸들러: 최상위 댓글 및 자식 댓글 모두에서 삭제 처리
-  const handleDeleted = (id: number) => {
-    setComments((prev) => {
-      const newComments = prev.filter((c) => c.commentId !== id);
-      return newComments.map((comment) => ({
-        ...comment,
-        children: comment.children
-          ? comment.children.filter((c) => c.commentId !== id)
-          : [],
-      }));
-    });
+  // 댓글 삭제 핸들러: API 요청까지 포함하여 CommentItem에서 직접 사용 가능하도록 재구성
+  const handleDeleteComment = async (commentId: number) => {
+    if (!window.confirm('정말 이 댓글을 삭제하시겠습니까?')) {
+      return false;
+    }
+
+    try {
+      await deleteComment(commentId);
+
+      // 삭제 성공 시 상태 업데이트
+      setComments((prev) => {
+        const newComments = prev.filter((c) => c.commentId !== commentId);
+        return newComments.map((comment) => ({
+          ...comment,
+          children: comment.children
+            ? comment.children.filter((c) => c.commentId !== commentId)
+            : [],
+        }));
+      });
+
+      return true;
+    } catch (err) {
+      console.error('댓글 삭제 실패:', err);
+      return false;
+    }
   };
 
-  // 댓글 업데이트 핸들러: 댓글 또는 자식 댓글 중 업데이트 대상 찾기
-  const handleUpdated = (updated: CommentResponse) => {
-    setComments((prev) =>
-      prev.map((comment) => {
-        if (comment.commentId === updated.commentId) {
-          return updated;
-        }
-        if (comment.children && comment.children.length > 0) {
-          return {
-            ...comment,
-            children: comment.children.map((child) =>
-              child.commentId === updated.commentId ? updated : child
-            ),
-          };
-        }
-        return comment;
-      })
-    );
+  // 댓글 업데이트 핸들러: API 요청까지 포함
+  const handleUpdateComment = async (commentId: number, content: string) => {
+    if (!content.trim()) {
+      return false;
+    }
+
+    const request: CreateCommentRequest = {
+      postId,
+      content: content,
+    };
+
+    try {
+      await updateComment(commentId, request);
+
+      // 업데이트 성공 시 상태 업데이트
+      setComments((prev) =>
+        prev.map((comment) => {
+          if (comment.commentId === commentId) {
+            return {
+              ...comment,
+              content: content,
+            };
+          }
+          if (comment.children && comment.children.length > 0) {
+            return {
+              ...comment,
+              children: comment.children.map((child) =>
+                child.commentId === commentId ? { ...child, content } : child
+              ),
+            };
+          }
+          return comment;
+        })
+      );
+
+      return true;
+    } catch (err) {
+      console.error('댓글 수정 실패:', err);
+      return false;
+    }
   };
 
-  // 댓글 좋아요 핸들러: 댓글 및 자식 댓글 업데이트
-  const handleLiked = (updated: CommentResponse) => {
+  // 댓글 좋아요 핸들러: API 요청까지 포함
+  const handleLikeComment = async (commentId: number) => {
+    try {
+      const result = await likeComment(commentId);
+
+      // 좋아요 상태 업데이트
+      setComments((prev) =>
+        prev.map((comment) => {
+          if (comment.commentId === commentId) {
+            return {
+              ...comment,
+              likeCount: result.likeCount,
+              likedByMe: result.likedByMe,
+            };
+          }
+          if (comment.children && comment.children.length > 0) {
+            return {
+              ...comment,
+              children: comment.children.map((child) =>
+                child.commentId === commentId
+                  ? {
+                      ...child,
+                      likeCount: result.likeCount,
+                      likedByMe: result.likedByMe,
+                    }
+                  : child
+              ),
+            };
+          }
+          return comment;
+        })
+      );
+
+      return true;
+    } catch (err) {
+      console.error('좋아요 토글 실패:', err);
+      return false;
+    }
+  };
+
+  // 답글 추가 핸들러
+  const handleAddReply = (
+    parentComment: CommentResponse,
+    newReply: CommentResponse
+  ) => {
     setComments((prev) =>
       prev.map((comment) => {
-        if (comment.commentId === updated.commentId) {
+        if (comment.commentId === parentComment.commentId) {
           return {
             ...comment,
-            likeCount: updated.likeCount,
-            likedByMe: updated.likedByMe,
-          };
-        }
-        if (comment.children && comment.children.length > 0) {
-          return {
-            ...comment,
-            children: comment.children.map((child) =>
-              child.commentId === updated.commentId
-                ? {
-                    ...child,
-                    likeCount: updated.likeCount,
-                    likedByMe: updated.likedByMe,
-                  }
-                : child
-            ),
+            children: [...(comment.children || []), newReply],
           };
         }
         return comment;
@@ -185,9 +262,10 @@ export default function CommentList({
             key={comment.commentId}
             comment={comment}
             postId={postId}
-            onDeleted={handleDeleted}
-            onUpdated={handleUpdated}
-            onLiked={handleLiked}
+            onDelete={handleDeleteComment}
+            onUpdate={handleUpdateComment}
+            onLike={handleLikeComment}
+            onAddReply={handleAddReply}
             onCreated={handleCreated}
           />
         ))}

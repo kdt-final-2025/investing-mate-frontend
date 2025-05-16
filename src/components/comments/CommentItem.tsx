@@ -1,28 +1,28 @@
 'use client';
 import React, { useState } from 'react';
-import {
-  deleteComment,
-  updateComment,
-  likeComment,
-} from '../../service/comments';
-import { CreateCommentRequest, CommentResponse } from '@/types/comments';
+import { CommentResponse } from '@/types/comments';
 import CommentForm from './CommentForm';
 
 interface Props {
   comment: CommentResponse;
   postId: number;
-  onDeleted: (id: number) => void;
-  onUpdated: (c: CommentResponse) => void;
-  onLiked: (c: CommentResponse) => void;
+  onDelete: (commentId: number) => Promise<boolean>;
+  onUpdate: (commentId: number, content: string) => Promise<boolean>;
+  onLike: (commentId: number) => Promise<boolean>;
+  onAddReply: (
+    parentComment: CommentResponse,
+    newReply: CommentResponse
+  ) => void;
   onCreated?: (newComment: CommentResponse) => void;
 }
 
 export default function CommentItem({
   comment,
   postId,
-  onDeleted,
-  onUpdated,
-  onLiked,
+  onDelete,
+  onUpdate,
+  onLike,
+  onAddReply,
   onCreated,
 }: Props) {
   // 답글 여부 확인: 부모 댓글이 없는 경우에만 답글을 달 수 있음
@@ -37,19 +37,18 @@ export default function CommentItem({
   const [error, setError] = useState<string | null>(null);
 
   const handleDelete = async () => {
-    if (!window.confirm('정말 이 댓글을 삭제하시겠습니까?')) {
-      return;
-    }
-
     setIsDeleting(true);
     setError(null);
 
     try {
-      await deleteComment(comment.commentId);
-      onDeleted(comment.commentId);
+      // 상위 컴포넌트에서 전달받은 함수 직접 호출
+      const success = await onDelete(comment.commentId);
+      if (!success) {
+        setError('댓글 삭제에 실패했습니다.');
+      }
     } catch (err) {
-      console.error('댓글 삭제 실패:', err);
-      setError('댓글 삭제에 실패했습니다.');
+      console.error('댓글 삭제 처리 중 오류:', err);
+      setError('댓글 삭제 중 오류가 발생했습니다.');
     } finally {
       setIsDeleting(false);
     }
@@ -63,21 +62,17 @@ export default function CommentItem({
     setIsUpdating(true);
     setError(null);
 
-    const request: CreateCommentRequest = {
-      postId,
-      content: text,
-    };
-
     try {
-      await updateComment(comment.commentId, request);
-      onUpdated({
-        ...comment,
-        content: text,
-      });
-      setIsEditing(false);
+      // 상위 컴포넌트에서 전달받은 함수 직접 호출
+      const success = await onUpdate(comment.commentId, text);
+      if (success) {
+        setIsEditing(false);
+      } else {
+        setError('댓글 수정에 실패했습니다.');
+      }
     } catch (err) {
-      console.error('댓글 수정 실패:', err);
-      setError('댓글 수정에 실패했습니다.');
+      console.error('댓글 수정 처리 중 오류:', err);
+      setError('댓글 수정 중 오류가 발생했습니다.');
     } finally {
       setIsUpdating(false);
     }
@@ -90,27 +85,22 @@ export default function CommentItem({
     setError(null);
 
     try {
-      const result = await likeComment(comment.commentId);
-      onLiked({
-        ...comment,
-        likeCount: result.likeCount,
-        likedByMe: result.likedByMe,
-      });
+      // 상위 컴포넌트에서 전달받은 함수 직접 호출
+      const success = await onLike(comment.commentId);
+      if (!success) {
+        setError('좋아요 처리에 실패했습니다.');
+      }
     } catch (err) {
-      console.error('좋아요 토글 실패:', err);
-      setError('좋아요 처리에 실패했습니다.');
+      console.error('좋아요 처리 중 오류:', err);
+      setError('좋아요 처리 중 오류가 발생했습니다.');
     } finally {
       setIsLiking(false);
     }
   };
 
   const handleReplyCreated = (newComment: CommentResponse) => {
-    // 새 답글 추가
-    const updatedChildren = [...(comment.children || []), newComment];
-    onUpdated({
-      ...comment,
-      children: updatedChildren,
-    });
+    // 상위 컴포넌트에서 전달받은 함수 직접 호출
+    onAddReply(comment, newComment);
     setShowReplyForm(false);
 
     // 상위 onCreated 핸들러가 있다면 호출
@@ -236,9 +226,10 @@ export default function CommentItem({
               key={reply.commentId}
               comment={reply}
               postId={postId}
-              onDeleted={onDeleted}
-              onUpdated={onUpdated}
-              onLiked={onLiked}
+              onDelete={onDelete}
+              onUpdate={onUpdate}
+              onLike={onLike}
+              onAddReply={onAddReply}
               onCreated={onCreated}
             />
           ))}

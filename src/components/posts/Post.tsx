@@ -144,18 +144,6 @@ export default function Post({ initialPost, postId }: Props) {
           <button className="hover:text-white transition">댓글</button>
         </div>
       </footer>
-
-      {/* 댓글 섹션 */}
-      <section className="mt-8 pt-6 border-t border-gray-700">
-        <h2 className="text-xl font-semibold mb-4">댓글</h2>
-        <CommentList
-          userId={initialPost.userId}
-          postId={Number(postId)}
-          sortType="TIME" // 최신순으로 정렬
-          size={10} // 한 페이지에 표시할 댓글 수
-          pageNumber={1} // 시작 페이지
-        />
-      </section>
     </main>
   );
 }
