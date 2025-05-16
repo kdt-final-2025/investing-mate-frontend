@@ -1,3 +1,4 @@
+//components/comments/CommentForm.tsx
 'use client';
 import React, { useState } from 'react';
 import { createComment } from '../../service/comments';
@@ -14,8 +15,8 @@ export default function CommentForm({ postId, parentId, onCreated }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 댓글 제출 처리 로직(제출 버튼과 엔터키 이벤트 모두에서 호출 가능)
-  const submitComment = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!content.trim()) return;
 
     setLoading(true);
@@ -23,25 +24,31 @@ export default function CommentForm({ postId, parentId, onCreated }: Props) {
 
     try {
       const request: CreateCommentRequest = {
-        postId,
+        postId: postId,
         content,
-        ...(parentId && { parentId }), // parentId가 있을 경우에만 포함
+        ...(parentId && { parentId }), // parentId가 있을 때만 포함
       };
 
+      // 요청 데이터 로깅
       console.log('댓글 요청 데이터:', request);
 
       const response = await createComment(request);
+
+      // 서버 응답 로깅
       console.log('서버 응답:', response);
 
+      // 응답 데이터 구조 검증
       if (!response || typeof response !== 'object') {
         throw new Error('서버 응답 데이터가 올바르지 않습니다.');
       }
 
+      // 백엔드에서 children 필드가 없을 경우 빈 배열로 초기화
       const responseWithChildren = {
         ...response,
         children: response.children || [],
       };
 
+      // 응답을 onCreated 핸들러에 전달
       onCreated(responseWithChildren);
       setContent('');
     } catch (err) {
@@ -52,20 +59,6 @@ export default function CommentForm({ postId, parentId, onCreated }: Props) {
     }
   };
 
-  // 폼 제출 이벤트 핸들러
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await submitComment();
-  };
-
-  // 엔터키 입력 시 제출 처리(Shift+Enter는 줄바꿈)
-  const handleKeyDown = async (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      await submitComment();
-    }
-  };
-
   return (
     <form onSubmit={handleSubmit} className="mb-4">
       <textarea
@@ -73,7 +66,6 @@ export default function CommentForm({ postId, parentId, onCreated }: Props) {
         placeholder={parentId ? '댓글에 답변하기...' : '댓글 작성하기...'}
         value={content}
         onChange={(e) => setContent(e.currentTarget.value)}
-        onKeyDown={handleKeyDown}
         disabled={loading}
         rows={3}
         required
