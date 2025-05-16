@@ -1,9 +1,7 @@
-'use client'
-
-import TradingViewWidget from './ui/TradingViewWidget'
+import TradingViewWidget from './ui/TradingViewWidget';
 
 interface Props {
-  symbol: string
+  symbol: string;
 }
 
 export default function CompanyChart({ symbol }: Props) {
@@ -12,5 +10,5 @@ export default function CompanyChart({ symbol }: Props) {
     <div className="w-full h-full">
       <TradingViewWidget symbol={symbol} />
     </div>
-  )
+  );
 }
