@@ -15,7 +15,7 @@ import CommentList from '@/components/comments/CommentList';
 
 interface Props {
   initialPost: PostResponse;
-  postId: string;
+  postId: number;
 }
 
 export default function Post({ initialPost, postId }: Props) {

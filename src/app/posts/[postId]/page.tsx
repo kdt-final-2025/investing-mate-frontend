@@ -6,7 +6,7 @@ import CommentList from '@/components/comments/CommentList';
 import { commentList } from '@/service/comments';
 
 interface Props {
-  params: Promise<{ postId: string }>;
+  params: Promise<{ postId: number }>;
 }
 
 export default async function PostDetailPage({ params }: Props) {

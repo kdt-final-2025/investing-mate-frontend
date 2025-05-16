@@ -31,7 +31,7 @@ export default function CommentList({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const loaderRef = useRef<HTMLDivElement>(null);
-  const observerRef = useRef<IntersectionObserver>();
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
   // 상태 초기화: postId나 sortType가 바뀔 때 댓글과 페이지 정보를 리셋
   useEffect(() => {
