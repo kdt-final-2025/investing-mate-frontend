@@ -1,94 +1,85 @@
-// components/comments/CommentForm.tsx
 'use client';
-import React, { useState, useEffect } from 'react';
-import { createComment } from '@/service/comments';
-import { CreateCommentRequest, CommentResponse } from '@/types/comments';
+
+import React, { useState, KeyboardEvent } from 'react';
+import { CommentResponse } from '@/types/comments';
 
 interface Props {
-  postId: number;
+  postId?: number;
   parentId?: number;
-
-  /** 작성 모드에서, 새로 생성된 댓글을 부모로 전달할 콜백 */
-  onCreated?: (newComment: CommentResponse) => void;
-
-  /** 수정 모드 진입 시, textarea 초기값 */
-  defaultValue?: string;
-  /** 수정 모드에서, 변경된 내용을 서버에 보낼 핸들러 */
-  onSubmit?: (newContent: string) => Promise<boolean>;
-  /** 수정 모드 취소 시 호출 */
+  onSubmit?: (content: string) => Promise<any>;
   onCancel?: () => void;
+  onCreated?: (c: CommentResponse) => void;
 }
 
 export default function CommentForm({
   postId,
   parentId,
-  onCreated,
-  defaultValue = '',
   onSubmit,
   onCancel,
+  onCreated,
 }: Props) {
-  const [content, setContent] = useState(defaultValue);
+  const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // defaultValue가 바뀌면 textarea에 반영
-  useEffect(() => {
-    setContent(defaultValue);
-  }, [defaultValue]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!content.trim()) return;
 
     setLoading(true);
     setError(null);
 
     try {
+      // CommentList에서 전달받은 onSubmit 함수가 있다면 이를 사용하여 댓글 생성 API 호출
       if (onSubmit) {
-        // —— 수정 모드
-        const ok = await onSubmit(content);
-        if (ok && onCancel) onCancel(); // 성공하면 에디트 폼 닫기
+        await onSubmit(content.trim());
+        setContent(''); // 성공 시 입력란 초기화
+      }
+      // onSubmit 함수가 없을 경우, onCreated도 호출할 수 있도록 (하지만 주로 onSubmit을 사용)
+      else if (onCreated) {
+        console.error(
+          'onSubmit 함수가 제공되지 않았습니다. onSubmit을 사용해 댓글 생성 API를 호출해주세요.'
+        );
+        setError('댓글을 저장할 콜백 함수가 제공되지 않았습니다.');
       } else {
-        // —— 작성 모드
-        const req: CreateCommentRequest = {
-          postId,
-          content,
-          ...(parentId && { parentId }),
-        };
-        const resp = await createComment(req);
-        onCreated?.({
-          ...resp,
-          children: resp.children || [],
-        });
-        setContent('');
+        console.error('댓글을 저장할 적절한 콜백 함수가 제공되지 않았습니다.');
+        setError('댓글을 저장할 수 없습니다.');
       }
     } catch (err) {
-      console.error(err);
-      setError(onSubmit ? '수정에 실패했습니다.' : '댓글 작성에 실패했습니다.');
+      console.error('댓글 저장 실패:', err);
+      setError('댓글 저장 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="mb-4">
+    <form onSubmit={handleSubmit} className="mt-4">
       <textarea
         value={content}
         onChange={(e) => setContent(e.currentTarget.value)}
+        onKeyDown={handleKeyDown}
         disabled={loading}
         rows={3}
         placeholder={parentId ? '답글을 입력하세요…' : '댓글을 입력하세요…'}
-        className="w-full rounded p-2 bg-gray-50 border"
+        className="w-full rounded-md p-3 bg-gray-800 text-white border border-gray-600 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
       />
 
-      {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+      {error && <p className="text-red-400 text-sm mt-1">{error}</p>}
 
       <div className="flex items-center justify-between mt-2">
         {onCancel && (
           <button
             type="button"
             onClick={onCancel}
-            className="text-sm text-gray-500 hover:underline"
+            className="text-sm text-gray-400 hover:underline"
           >
             취소
           </button>
@@ -96,11 +87,11 @@ export default function CommentForm({
         <button
           type="submit"
           disabled={loading || !content.trim()}
-          className="px-3 py-1 bg-blue-600 text-white rounded disabled:opacity-50"
+          className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm disabled:opacity-50 transition"
         >
           {loading
             ? '…'
-            : onSubmit
+            : onCancel
               ? '저장'
               : parentId
                 ? '답글 게시'

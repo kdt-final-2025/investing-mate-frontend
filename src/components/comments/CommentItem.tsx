@@ -12,7 +12,7 @@ interface Props {
   onUpdate: (commentId: number, newContent: string) => Promise<boolean>;
   onLike: (commentId: number) => Promise<boolean>;
   onAddReply: (parent: CommentResponse, reply: CommentResponse) => void;
-  onCreated: (c: CommentResponse) => void;
+  onCreated?: (content: string) => Promise<void>;
 }
 
 export default function CommentItem({
@@ -48,11 +48,8 @@ export default function CommentItem({
       {/* 수정 모드 */}
       {isEditing ? (
         <CommentForm
-          postId={postId}
-          defaultValue={comment.content}
           onSubmit={async (newText) => {
-            const ok = await onUpdate(comment.commentId, newText);
-            return ok;
+            await onUpdate(comment.commentId, newText); // 반환값 사용 X
           }}
           onCancel={() => setIsEditing(false)}
         />

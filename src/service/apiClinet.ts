@@ -4,7 +4,7 @@ import { createClient } from '@/utils/supabase/client';
 import { getSessionOrThrow } from '@/utils/auth';
 
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE,
+  baseURL: 'http://localhost:8080',
 });
 
 apiClient.interceptors.request.use(async (config) => {

@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Post from '@/components/posts/Post';
 import { getPost } from '@/service/posts';
 import CommentList from '@/components/comments/CommentList';
-import { commentList } from '@/service/comments';
+// import { commentList } from '@/service/comments';
 
 interface Props {
   params: Promise<{ postId: number }>;
@@ -12,7 +12,7 @@ interface Props {
 export default async function PostDetailPage({ params }: Props) {
   const { postId } = await params;
   const post = await getPost(Number(postId));
-  const commentData = await commentList(postId, 'TIME', 10, 1);
+  // const commentData = await commentList(postId, 'TIME', 10, 1);
   return (
     <main className="min-h-screen bg-[#131722] text-white p-8">
       <div className="relative mb-6 flex flex-col items-center">
