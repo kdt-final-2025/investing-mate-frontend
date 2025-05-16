@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 
-type Post = {
+type PostItemType = {
   id: number;
   postTitle: string;
   userId: string;
@@ -11,7 +11,11 @@ type Post = {
   likeCount: number;
 };
 
-export function PostItemClient({ post }: { post: Post }) {
+interface PostItemProps {
+  post: PostItemType;
+}
+
+export function PostItem({ post }: PostItemProps) {
   return (
     <Link
       href={`/posts/${post.id}`} // 경로 수정 (app 디렉토리 구조에 맞게)
