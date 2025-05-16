@@ -1,134 +1,99 @@
+// components/comments/CommentItem.tsx
 'use client';
 import React, { useState } from 'react';
-import {
-  Comment,
-  deleteComment,
-  updateComment,
-  likeComment,
-} from '../../service/comments';
+import { CommentResponse } from '@/types/comments';
 import CommentForm from './CommentForm';
+import { formatDistanceToNow } from 'date-fns';
+
 interface Props {
-  comment: Comment;
-  boardId: string;
-  postId: string;
-  onDeleted: (id: number) => void;
-  onUpdated: (c: Comment) => void;
-  onLiked: (c: Comment) => void;
+  comment: CommentResponse;
+  postId: number;
+  onDelete: (commentId: number) => Promise<boolean>;
+  onUpdate: (commentId: number, newContent: string) => Promise<boolean>;
+  onLike: (commentId: number) => Promise<boolean>;
+  onAddReply: (parent: CommentResponse, reply: CommentResponse) => void;
+  onCreated?: (content: string) => Promise<void>;
 }
 
 export default function CommentItem({
   comment,
-  boardId,
   postId,
-  onDeleted,
-  onUpdated,
-  onLiked,
+  onDelete,
+  onUpdate,
+  onLike,
+  onAddReply,
+  onCreated,
 }: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const [showReplyForm, setShowReplyForm] = useState(false);
-  const [text, setText] = useState(comment.content);
 
-  const handleDelete = async () => {
-    await deleteComment(boardId, postId, comment.id);
-    onDeleted(comment.id);
-  };
-
-  const handleUpdate = async () => {
-    const updated = await updateComment(boardId, postId, comment.id, text);
-    onUpdated(updated);
-    setIsEditing(false);
-  };
-
-  const handleLike = async () => {
-    const result = await likeComment(boardId, postId, comment.id);
-    onLiked({
-      ...comment,
-      likeCount: result.likeCount,
-      likedByMe: result.likedByMe,
-    });
-  };
-
-  const handleReplyCreated = (newComment: Comment) => {
-    // bubble up new reply
-    onUpdated({
-      ...comment,
-      replies: [...(comment.replies || []), newComment],
-    });
+  const handleReplyCreated = (reply: CommentResponse) => {
+    onAddReply(comment, reply);
     setShowReplyForm(false);
   };
 
   return (
-    <div className="bg-[#1E222D] p-4 rounded-lg border border-[#363A45]">
-      <div className="flex justify-between">
-        <span className="text-sm font-medium text-white">{comment.author}</span>
-        <span className="text-xs text-gray-400">
-          {new Date(comment.createdAt).toLocaleString()}
-        </span>
+    <div className="border rounded p-4 mb-4 bg-white">
+      <div className="flex justify-between items-center mb-2">
+        <div>
+          <span className="font-semibold">{comment.userId}</span>
+          <span className="ml-2 text-xs text-gray-500">
+            {formatDistanceToNow(new Date(comment.createdAt), {
+              addSuffix: true,
+            })}
+          </span>
+        </div>
       </div>
 
+      {/* 수정 모드 */}
       {isEditing ? (
-        <textarea
-          className="w-full bg-[#1E222D] border border-[#363A45] text-white mt-2 p-2 rounded-lg"
-          value={text}
-          onChange={(e) => setText(e.currentTarget.value)}
+        <CommentForm
+          onSubmit={async (newText) => {
+            await onUpdate(comment.commentId, newText); // 반환값 사용 X
+          }}
+          onCancel={() => setIsEditing(false)}
         />
       ) : (
-        <p className="mt-2">{comment.content}</p>
+        <p className="mb-2">{comment.content}</p>
       )}
 
-      <div className="mt-2 flex space-x-4">
-        <button onClick={handleLike} className="btn btn-xs">
-          {comment.likedByMe ? '💖' : '🤍'} {comment.likeCount}
-        </button>
-        {isEditing ? (
-          <>
-            <button onClick={handleUpdate} className="btn btn-sm">
-              Save
-            </button>
-            <button onClick={() => setIsEditing(false)} className="btn btn-sm">
-              Cancel
-            </button>
-          </>
-        ) : (
-          <>
-            <button onClick={() => setIsEditing(true)} className="btn btn-sm">
-              Edit
-            </button>
-            <button onClick={handleDelete} className="btn btn-sm">
-              Delete
-            </button>
-            <button
-              onClick={() => setShowReplyForm(!showReplyForm)}
-              className="btn btn-sm"
-            >
-              Reply
-            </button>
-          </>
-        )}
-      </div>
+      {/* 액션 버튼 */}
+      {!isEditing && (
+        <div className="flex gap-4 text-xs text-gray-600 mb-2">
+          <button onClick={() => onLike(comment.commentId)}>
+            ❤️ {comment.likeCount}
+          </button>
+          <button onClick={() => setShowReplyForm((v) => !v)}>답글</button>
+          <button onClick={() => setIsEditing(true)}>수정</button>
+          <button onClick={() => onDelete(comment.commentId)}>삭제</button>
+        </div>
+      )}
 
+      {/* 답글 폼 */}
       {showReplyForm && (
-        <div className="ml-6 mt-2">
+        <div className="ml-4">
           <CommentForm
-            boardId={boardId}
             postId={postId}
-            parentId={comment.id}
+            parentId={comment.commentId}
             onCreated={handleReplyCreated}
+            onCancel={() => setShowReplyForm(false)}
           />
         </div>
       )}
 
-      {comment.replies && comment.replies.length > 0 && (
-        <div className="ml-6 mt-4 space-y-4">
-          {comment.replies.map((reply) => (
+      {/* 대댓글 */}
+      {comment.children?.length > 0 && (
+        <div className="ml-4 mt-4 space-y-4">
+          {comment.children.map((child) => (
             <CommentItem
-              key={reply.id}
-              comment={reply}
-              boardId={boardId}
+              key={child.commentId}
+              comment={child}
               postId={postId}
-              onDeleted={onDeleted}
-              onUpdated={onUpdated}
-              onLiked={onLiked}
+              onDelete={onDelete}
+              onUpdate={onUpdate}
+              onLike={onLike}
+              onAddReply={onAddReply}
+              onCreated={onCreated}
             />
           ))}
         </div>
