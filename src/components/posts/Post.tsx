@@ -1,4 +1,3 @@
-// src/components/posts/Post.tsx
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -7,6 +6,10 @@ import { deletePost } from '@/service/posts';
 import LikeButton from '@/components/posts/LikeButton';
 import { useIsAuthor } from '@/hooks/usePosts/useIsAuthor';
 
+import PostEditForm, {
+  PostEditFormValues,
+} from '@/components/posts/PostEditForm';
+import CommentList from '@/components/comments/CommentList';
 interface PostProps {
   initialPost: PostResponse;
   postId: number;
