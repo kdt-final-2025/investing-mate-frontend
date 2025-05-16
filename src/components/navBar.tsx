@@ -72,6 +72,7 @@ export default function NavBar({
           </Link>
 
           <div className="flex space-x-6 max-md:hidden items-center">
+
             <Link href="/indicator" className="text-gray-300 hover:text-white text-xs">
               경제지표
             </Link>
@@ -81,9 +82,11 @@ export default function NavBar({
             <Link href="/company" className="text-gray-300 hover:text-white text-xs">
               주식
             </Link>
-            <Link href="/realtime" className="text-gray-300 hover:text-white text-xs">
-              실시간
-            </Link>
+            <Link
+              href="/chat"
+              className="text-gray-300 hover:text-white text-xs"
+            >
+              StockAI
             <Link href="/boards" className="text-gray-300 hover:text-white text-xs">
               커뮤니티
             </Link>
