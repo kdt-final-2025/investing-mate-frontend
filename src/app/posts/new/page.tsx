@@ -2,10 +2,10 @@
 import CreatePostForm from '@/components/posts/CreatePostForm';
 
 interface NewPostPageProps {
-  searchParams: { boardId: string };
+  searchParams: { boardId: number };
 }
 
 export default function NewPostPage({ searchParams }: NewPostPageProps) {
-  const boardId = Number(searchParams.boardId);
+  const boardId = searchParams.boardId;
   return <CreatePostForm boardId={boardId} />;
 }

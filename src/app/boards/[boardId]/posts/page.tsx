@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { fetchPostList } from '@/service/posts';
 
 interface PageProps {
-  params: Promise<{ boardId: string }>;
+  params: Promise<{ boardId: number }>;
   searchParams: Promise<{ page?: string }>;
 }
 
@@ -13,10 +13,10 @@ export default async function BoardPostsPage({
   params,
   searchParams,
 }: PageProps) {
-  const { boardId: boardIdString } = await params;
+  const { boardId: boardIdNumber } = await params;
   const { page } = await searchParams;
 
-  const boardIdNum = parseInt(boardIdString, 10);
+  const boardIdNum = parseInt(String(boardIdNumber), 10);
   const currentPage = page ? parseInt(page, 10) : 1;
 
   const {
@@ -52,7 +52,7 @@ export default async function BoardPostsPage({
             좋아요한 게시물
           </button>
         </Link>
-        <Link href={`/posts/new?boardId=${boardIdString}`}>
+        <Link href={`/posts/new?boardId=${boardIdNumber}`}>
           <button className="px-4 py-2 bg-[#3b4754] hover:bg-[#4a5b68] rounded-full text-white text-sm">
             + 새 게시글
           </button>
@@ -63,7 +63,7 @@ export default async function BoardPostsPage({
       <PostList
         posts={posts}
         pageInfo={pageInfo}
-        boardId={boardIdString}
+        boardId={boardIdNumber}
         currentPage={currentPage}
       />
     </main>
