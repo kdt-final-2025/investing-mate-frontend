@@ -2,7 +2,6 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
-import { SupabaseListener } from '@/app/providers/SupabaseListener'
 import ClientNavWrapper from '@/components/ClientNavWrapper'
 import AlertSubscriber from '@/components/AlertSubscriber'  // 추가
 
@@ -30,7 +29,6 @@ export default function RootLayout({
   return (
     <html lang="ko" className={`${geistSans.variable} ${geistMono.variable}`}>
     <body>
-    <SupabaseListener>
       {/* 전역 알림 구독 컴포넌트 */}
       <AlertSubscriber />
 
@@ -39,7 +37,6 @@ export default function RootLayout({
 
       {/* 페이지 본문 */}
       {children}
-    </SupabaseListener>
     </body>
     </html>
   )
