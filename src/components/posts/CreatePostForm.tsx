@@ -3,22 +3,27 @@
 
 import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
-import { createPost } from '@/service/posts';
-import type { CreatePostRequest } from '@/types/posts';
+import type { CreatePostRequest, PostResponse } from '@/types/posts';
+import { usePostsImage } from '@/hooks/usePosts/usePostsImage';
+import { ImageUpload } from '@/components/posts/ImageUpload';
 
-interface CreatePostFormProps {
-  boardId: number;
-}
-
-// Form input 타입 정의
 interface FormValues {
   postTitle: string;
   content: string;
   imageUrls: { url: string }[];
 }
 
-export default function CreatePostForm({ boardId }: CreatePostFormProps) {
+export default function CreatePostForm({
+  boardId,
+  postId,
+  initialData,
+}: {
+  boardId: number;
+  postId?: number;
+  initialData?: PostResponse;
+}) {
   const router = useRouter();
+  const isEdit = Boolean(postId);
 
   const {
     register,
@@ -26,35 +31,36 @@ export default function CreatePostForm({ boardId }: CreatePostFormProps) {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
-    defaultValues: {
-      postTitle: '',
-      content: '',
-      imageUrls: [{ url: '' }],
-    },
+    defaultValues: initialData
+      ? {
+          postTitle: initialData.postTitle,
+          content: initialData.content,
+          imageUrls: initialData.imageUrls.map((u) => ({ url: u })),
+        }
+      : { postTitle: '', content: '', imageUrls: [] },
   });
 
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'imageUrls',
   });
+  const { handleCreatePost, handleUpdatePost } = usePostsImage(boardId);
 
   const onSubmit = async (data: FormValues) => {
-    const filteredUrls = data.imageUrls
-      .map((item) => item.url.trim())
-      .filter((url) => url);
     const payload: CreatePostRequest = {
       boardId,
       postTitle: data.postTitle,
       content: data.content,
-      imageUrls: filteredUrls,
+      imageUrls: data.imageUrls.map((i) => i.url),
     };
 
-    try {
-      await createPost(payload);
-      router.push(`/boards/${boardId}/posts`);
-    } catch (error: any) {
-      alert(error.message || '게시물 생성 중 오류가 발생했습니다.');
+    if (isEdit && postId) {
+      await handleUpdatePost(postId, payload);
+    } else {
+      await handleCreatePost(payload);
     }
+
+    router.push(`/boards/${boardId}/posts`);
   };
 
   return (
@@ -75,7 +81,13 @@ export default function CreatePostForm({ boardId }: CreatePostFormProps) {
               disabled={isSubmitting}
               className="text-indigo-400 hover:text-indigo-200 disabled:opacity-50"
             >
-              {isSubmitting ? '작성 중...' : '게시'}
+              {isSubmitting
+                ? isEdit
+                  ? '수정 중...'
+                  : '작성 중...'
+                : isEdit
+                  ? '수정'
+                  : '게시'}
             </button>
           </div>
 
@@ -84,7 +96,7 @@ export default function CreatePostForm({ boardId }: CreatePostFormProps) {
             <input
               type="text"
               placeholder="제목을 입력하세요"
-              {...register('postTitle', { required: '제목을 입력해주세요' })}
+              {...register('postTitle', { required: '제목 입력 필요' })}
               className="w-full bg-transparent border-b border-gray-600 focus:outline-none pb-2 text-lg"
             />
             {errors.postTitle && (
@@ -99,7 +111,7 @@ export default function CreatePostForm({ boardId }: CreatePostFormProps) {
             <textarea
               placeholder="내용을 입력하세요"
               rows={10}
-              {...register('content', { required: '내용을 입력해주세요' })}
+              {...register('content', { required: '내용 입력 필요' })}
               className="w-full bg-transparent border-b border-gray-600 focus:outline-none pb-2 resize-none"
             />
             {errors.content && (
@@ -109,40 +121,13 @@ export default function CreatePostForm({ boardId }: CreatePostFormProps) {
             )}
           </div>
 
-          {/* 이미지 URL 입력 */}
-          <div className="mb-4">
-            <div className="flex items-center mb-2">
-              <span className="text-gray-400">이미지 URL (선택)</span>
-              {fields.length < 5 && (
-                <button
-                  type="button"
-                  onClick={() => append({ url: '' })}
-                  className="ml-2 text-gray-400 hover:text-white"
-                >
-                  + 추가
-                </button>
-              )}
-            </div>
-            <div className="space-y-2">
-              {fields.map((field, idx) => (
-                <div key={field.id} className="flex items-center">
-                  <input
-                    type="text"
-                    placeholder="https://..."
-                    {...register(`imageUrls.${idx}.url` as const)}
-                    className="flex-1 bg-transparent border-b border-gray-600 focus:outline-none pb-1"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => remove(idx)}
-                    className="ml-2 text-gray-500 hover:text-red-500"
-                  >
-                    삭제
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* 이미지 업로드 */}
+          <ImageUpload
+            boardId={boardId}
+            fields={fields}
+            append={append}
+            remove={remove}
+          />
         </form>
       </div>
     </main>

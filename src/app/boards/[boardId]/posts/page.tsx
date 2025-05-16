@@ -45,7 +45,10 @@ export default async function BoardPostsPage({
       {/* 좋아요한 게시물 (왼쪽) & 새 게시글 (오른쪽) 버튼 */}
       <div className="flex justify-between items-center mb-6">
         <Link href="/posts/liked">
-          <button className="px-4 py-2 bg-[#3b4754] hover:bg-[#4a5b68] rounded-full text-white text-sm">
+          <button
+            className="px-4 py-2 rounded-full text-sm text-pink-400 border-2 border-pink-400 bg-transparent
+                       hover:bg-pink-400 hover:text-white transition-colors"
+          >
             좋아요한 게시물
           </button>
         </Link>
