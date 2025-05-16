@@ -17,7 +17,7 @@ export default function Post({ initialPost, postId }: PostProps) {
   const router = useRouter();
 
   const handleEdit = () => {
-    router.push(`/posts/new?boardId=${initialPost.boardId}&postId=${postId}`);
+    router.push(`/posts/${postId}/edit`);
   };
 
   const handleDelete = async () => {
