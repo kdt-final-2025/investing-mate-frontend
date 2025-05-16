@@ -9,7 +9,7 @@ import { useIsAuthor } from '@/hooks/usePosts/useIsAuthor';
 
 interface PostProps {
   initialPost: PostResponse;
-  postId: string;
+  postId: number;
 }
 
 export default function Post({ initialPost, postId }: PostProps) {

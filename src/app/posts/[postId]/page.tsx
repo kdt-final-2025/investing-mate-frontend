@@ -4,12 +4,12 @@ import Post from '@/components/posts/Post';
 import { getPost } from '@/service/posts';
 
 interface Props {
-  params: Promise<{ postId: string }>;
+  params: Promise<{ postId: number }>;
 }
 
 export default async function PostDetailPage({ params }: Props) {
   const { postId } = await params;
-  const post = await getPost(Number(postId));
+  const post = await getPost(postId);
 
   return (
     <main className="min-h-screen bg-[#131722] text-white p-8">

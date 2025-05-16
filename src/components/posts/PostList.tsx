@@ -6,7 +6,7 @@ import { PostListPagination  } from '@/components/posts/PostListPagination';
 interface PostListProps {
   posts: Post[];
   pageInfo: PageInfo;
-  boardId: string;
+  boardId: number;
   currentPage: number;
 }
 

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
 interface PostListPaginationProps {
-  boardId: string;
+  boardId: number;
   totalPages: number;
   currentPage: number;
 }
