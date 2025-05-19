@@ -70,6 +70,7 @@ export default function AvatarMenu({
               <li>
                 <Link
                   href="/profile"
+                  onClick={() => setMenuOpen(false)}
                   className="block px-2 py-1 hover:bg-[#363B47] rounded"
                 >
                   프로필 보기
@@ -79,6 +80,7 @@ export default function AvatarMenu({
                 <li>
                   <Link
                     href="/admin"
+                    onClick={() => setMenuOpen(false)}
                     className="block px-2 py-1 hover:bg-[#363B47] rounded"
                   >
                     운영모드
@@ -89,6 +91,7 @@ export default function AvatarMenu({
                 <form action={signOutAction}>
                   <button
                     type="submit"
+                    onClick={() => setMenuOpen(false)}
                     className="w-full text-left px-2 py-1 hover:bg-[#363B47] rounded"
                   >
                     로그아웃
