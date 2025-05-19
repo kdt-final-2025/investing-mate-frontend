@@ -1,7 +1,20 @@
 // src/app/posts/liked/page.tsx
-import { LikedPostList } from '@/components/posts/LikedPostList';
+import React from 'react';
+import PostLikeBackButton from '@/components/posts/PostLikeBackButton';
+import LikedPostList from '@/components/posts/LikedPostList';
 
 export default function LikedPostsPage() {
-  // 초기 데이터 없이 부트스트랩하고, LikedPostList 내부에서 첫 로드를 합니다.
-  return <LikedPostList initialPosts={[]} />;
+  return (
+    <main className="min-h-screen w-full bg-[#131722] text-white p-8 flex flex-col">
+      {/* 상단 헤더: 돌아가기 버튼 */}
+      <div className="relative mb-6 h-12 flex items-center justify-center">
+        <div className="absolute left-0">
+          <PostLikeBackButton />
+        </div>
+        <h1 className="text-2xl font-bold">좋아요한 글 목록</h1>
+      </div>
+
+      <LikedPostList />
+    </main>
+  );
 }

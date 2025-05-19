@@ -67,8 +67,8 @@ export default function CommentForm({
           resize-none
         "
       />
-
       {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+
 
       <div className="flex items-center justify-between mt-2">
         {onCancel && (

@@ -1,5 +1,5 @@
+// components/comments/CommentItem.tsx
 'use client';
-
 import React, { useState, useEffect } from 'react';
 import { CommentResponse } from '@/types/comments';
 import CommentForm from './CommentForm';

@@ -1,16 +1,16 @@
 import Link from 'next/link';
 
-interface PaginationProps {
-  boardId: string;
+interface PostListPaginationProps {
+  boardId: number;
   totalPages: number;
   currentPage: number;
 }
 
-export function Pagination({
+export function PostListPagination({
   boardId,
   totalPages,
   currentPage,
-}: PaginationProps) {
+}: PostListPaginationProps) {
   return (
     <div className="flex justify-center mt-6 space-x-2">
       {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (

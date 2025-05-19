@@ -46,6 +46,15 @@ export default function CommentList({
     setError(null);
   }, [postId, sortType]);
 
+  // postId나 sortType이 변경되면 댓글 목록 상태를 초기화합니다.
+  useEffect(() => {
+    setComments([]);
+    setPage(1);
+    setHasMore(true);
+    setError(null);
+  }, [postId, sortType]);
+
+  // 댓글 목록 API 호출 함수 (페이징 포함)
   const loadComments = useCallback(async () => {
     if (loading || !hasMore) return;
     setLoading(true);
@@ -120,6 +129,9 @@ export default function CommentList({
       },
       { threshold: 0.1 }
     );
+    observerRef.current.observe(element);
+    return () => observerRef.current?.disconnect();
+  }, [loading, hasMore]);
 
     observerRef.current.observe(element);
 

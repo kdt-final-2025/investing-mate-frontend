@@ -1,13 +1,11 @@
 'use client';
 
-import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import type { PostResponse } from '@/types/posts';
-import { updatePost, deletePost } from '@/service/posts';
-import { MoreVertical } from 'lucide-react';
-import { useClickOutside } from '@/hooks/useProfile/useClickOutside';
+import { deletePost } from '@/service/posts';
 import LikeButton from '@/components/posts/LikeButton';
 import { useIsAuthor } from '@/hooks/usePosts/useIsAuthor';
+
 import PostEditForm, {
   PostEditFormValues,
 } from '@/components/posts/PostEditForm';
@@ -18,25 +16,12 @@ interface Props {
   postId: number;
 }
 
-export default function Post({ initialPost, postId }: Props) {
+export default function Post({ initialPost, postId }: PostProps) {
   const isAuthor = useIsAuthor(initialPost.userId);
-  const [isEditing, setIsEditing] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  // 외부 클릭 시 메뉴 닫기
-  useClickOutside(menuRef, () => setMenuOpen(false), menuOpen);
-
-  const onSubmit = async ({ postTitle, content }: PostEditFormValues) => {
-    await updatePost(Number(postId), {
-      boardId: initialPost.boardId,
-      postTitle,
-      content,
-      imageUrls: initialPost.imageUrls,
-    });
-    setIsEditing(false);
-    router.refresh();
+  const handleEdit = () => {
+    router.push(`/posts/${postId}/edit`);
   };
 
   const handleDelete = async () => {
@@ -55,21 +40,8 @@ export default function Post({ initialPost, postId }: Props) {
     }
   );
 
-  if (isEditing) {
-    return (
-      <PostEditForm
-        initialTitle={initialPost.postTitle}
-        initialContent={initialPost.content}
-        onSubmit={onSubmit}
-        onCancel={() => setIsEditing(false)}
-      />
-    );
-  }
-
-  // 일반 보기 모드
   return (
     <main className="min-h-screen w-full max-w-none bg-[#131722] text-white p-8 flex flex-col">
-      {/* 헤더 */}
       <header className="flex justify-between items-center mb-6">
         <div className="flex space-x-2 text-sm text-gray-400">
           <span>{initialPost.userId}</span>
@@ -78,43 +50,24 @@ export default function Post({ initialPost, postId }: Props) {
           <span>·</span>
           <span>조회 {initialPost.viewCount}</span>
         </div>
-
         {isAuthor && (
-          <div ref={menuRef} className="relative">
+          <div className="relative flex space-x-2">
             <button
-              onClick={() => setMenuOpen((o) => !o)}
-              className="p-2 rounded-full hover:bg-white/10 transition"
+              onClick={handleEdit}
+              className="px-2 py-1 bg-gray-700 rounded hover:bg-gray-600 text-sm"
             >
-              <MoreVertical size={20} />
+              수정
             </button>
-            {menuOpen && (
-              <ul className="absolute right-0 mt-2 w-32 bg-[#2A2E39] rounded-md shadow-lg divide-y divide-gray-700 z-10">
-                <li>
-                  <button
-                    onClick={() => {
-                      setIsEditing(true);
-                      setMenuOpen(false);
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-white/10 text-sm"
-                  >
-                    수정
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={handleDelete}
-                    className="w-full text-left px-4 py-2 hover:bg-red-500/30 text-red-400 text-sm"
-                  >
-                    삭제
-                  </button>
-                </li>
-              </ul>
-            )}
+            <button
+              onClick={handleDelete}
+              className="px-2 py-1 bg-red-600 rounded hover:bg-red-500 text-sm"
+            >
+              삭제
+            </button>
           </div>
         )}
       </header>
 
-      {/* 본문 */}
       <article className="flex-1 mb-8 space-y-4">
         <div className="prose prose-invert">
           <p className="whitespace-pre-wrap">{initialPost.content}</p>
@@ -133,7 +86,6 @@ export default function Post({ initialPost, postId }: Props) {
         )}
       </article>
 
-      {/* 푸터 */}
       <footer className="flex justify-between items-center pt-4 border-t border-gray-700">
         <LikeButton
           postId={Number(postId)}
