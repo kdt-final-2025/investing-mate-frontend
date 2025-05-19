@@ -133,7 +133,6 @@ export default function CommentList({
     return () => observerRef.current?.disconnect();
   }, [loading, hasMore]);
 
-    observerRef.current.observe(element);
 
     return () => observerRef.current?.disconnect();
   }, [loading, hasMore, comments.length]);
