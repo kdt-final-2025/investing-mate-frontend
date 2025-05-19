@@ -1,4 +1,4 @@
-// Updated File: src/components/admin/ReporterApplicationManage.tsx
+// File: src/components/admin/Reporter/ReporterApplicationManage.tsx
 'use client';
 
 import React from 'react';

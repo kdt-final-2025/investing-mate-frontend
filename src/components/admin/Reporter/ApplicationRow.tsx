@@ -1,4 +1,4 @@
-// File: src/components/admin/ApplicationRow.tsx
+// File: src/components/admin/Reporter/ApplicationRow.tsx
 import React from 'react';
 import StatusBadge from './StatusBadge';
 import { ApplicationResponse } from '@/hooks/useAdmin/useReporterApplications';

@@ -1,4 +1,4 @@
-// File: src/components/admin/ReporterAppHeader.tsx
+// File: src/components/admin/Reporter/ReporterAppHeader.tsx
 import Link from 'next/link';
 import React from 'react';
 
