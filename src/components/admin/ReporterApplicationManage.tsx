@@ -22,10 +22,19 @@ export default function ReporterApplicationManage() {
   const { role, loading: loadingRole } = useUserRole();
   const isAdmin = role === 'ADMINISTRATOR';
 
-  if (loadingRole)
-    return <LoadingWrapper isLoading error={null} children={undefined} />;
-  if (!isAdmin)
-    return <p className="text-red-400">관리자 권한이 필요합니다.</p>;
+  // 권한 체크
+  if (loadingRole) {
+    return (
+      <LoadingWrapper isLoading={true} error={null} children={undefined} />
+    );
+  }
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-[#12121A] flex items-center justify-center">
+        <p className="text-red-400 text-lg">관리자 권한이 필요합니다.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 bg-[#12121A] min-h-screen">
