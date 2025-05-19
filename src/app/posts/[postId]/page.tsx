@@ -11,7 +11,7 @@ interface Props {
 
 export default async function PostDetailPage({ params }: Props) {
   const { postId } = await params;
-  const post = await getPost(postId);
+  const post = await getPost(Number(postId));
   // const commentData = await commentList(postId, 'TIME', 10, 1);
   return (
     <main className="min-h-screen bg-[#131722] text-white p-8">

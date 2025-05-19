@@ -10,7 +10,8 @@ import PostEditForm, {
   PostEditFormValues,
 } from '@/components/posts/PostEditForm';
 import CommentList from '@/components/comments/CommentList';
-interface PostProps {
+
+interface Props {
   initialPost: PostResponse;
   postId: number;
 }

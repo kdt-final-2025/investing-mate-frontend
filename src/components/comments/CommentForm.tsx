@@ -6,9 +6,10 @@ import { CommentResponse } from '@/types/comments';
 interface Props {
   postId?: number;
   parentId?: number;
-  onSubmit?: (content: string) => Promise<any>;
+  onSubmit: (content: string) => Promise<any>;
   onCancel?: () => void;
   onCreated?: (c: CommentResponse) => void;
+  initialContent?: string;
 }
 
 export default function CommentForm({
@@ -17,8 +18,9 @@ export default function CommentForm({
   onSubmit,
   onCancel,
   onCreated,
+  initialContent = '',
 }: Props) {
-  const [content, setContent] = useState('');
+  const [content, setContent] = useState(initialContent);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,21 +32,9 @@ export default function CommentForm({
     setError(null);
 
     try {
-      // CommentList에서 전달받은 onSubmit 함수가 있다면 이를 사용하여 댓글 생성 API 호출
-      if (onSubmit) {
-        await onSubmit(content.trim());
-        setContent(''); // 성공 시 입력란 초기화
-      }
-      // onSubmit 함수가 없을 경우, onCreated도 호출할 수 있도록 (하지만 주로 onSubmit을 사용)
-      else if (onCreated) {
-        console.error(
-          'onSubmit 함수가 제공되지 않았습니다. onSubmit을 사용해 댓글 생성 API를 호출해주세요.'
-        );
-        setError('댓글을 저장할 콜백 함수가 제공되지 않았습니다.');
-      } else {
-        console.error('댓글을 저장할 적절한 콜백 함수가 제공되지 않았습니다.');
-        setError('댓글을 저장할 수 없습니다.');
-      }
+      const result = await onSubmit(content.trim());
+      setContent('');
+      if (onCreated && result) onCreated(result as CommentResponse);
     } catch (err) {
       console.error('댓글 저장 실패:', err);
       setError('댓글 저장 중 오류가 발생했습니다.');
@@ -69,10 +59,16 @@ export default function CommentForm({
         disabled={loading}
         rows={3}
         placeholder={parentId ? '답글을 입력하세요…' : '댓글을 입력하세요…'}
-        className="w-full rounded-md p-3 bg-gray-800 text-white border border-gray-600 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+        className="
+          w-full rounded-lg p-3
+          bg-[#1E222D] border border-[#2A2E39]
+          text-white placeholder-gray-500
+          focus:outline-none focus:ring-2 focus:ring-blue-400
+          resize-none
+        "
       />
+      {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
 
-      {error && <p className="text-red-400 text-sm mt-1">{error}</p>}
 
       <div className="flex items-center justify-between mt-2">
         {onCancel && (
@@ -87,7 +83,11 @@ export default function CommentForm({
         <button
           type="submit"
           disabled={loading || !content.trim()}
-          className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm disabled:opacity-50 transition"
+          className="
+            px-4 py-1.5 rounded-lg text-sm font-medium
+            bg-[#2A2E39] hover:bg-[#1E222D] text-white
+            disabled:opacity-50 transition
+          "
         >
           {loading
             ? '…'

@@ -46,6 +46,14 @@ export default function CommentList({
     setError(null);
   }, [postId, sortType]);
 
+  // postId나 sortType이 변경되면 댓글 목록 상태를 초기화합니다.
+  useEffect(() => {
+    setComments([]);
+    setPage(1);
+    setHasMore(true);
+    setError(null);
+  }, [postId, sortType]);
+
   // 댓글 목록 API 호출 함수 (페이징 포함)
   const loadComments = useCallback(async () => {
     if (loading || !hasMore) return;
@@ -69,15 +77,23 @@ export default function CommentList({
           return [...prev, ...newItems];
         });
       }
-      // 페이지 정보에 따라 추가 호출 여부 결정
       if (data.pageMeta.pageNumber < data.pageMeta.totalPage) {
         setHasMore(true);
       } else {
         setHasMore(false);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      setError('댓글을 불러오는 중 오류가 발생했습니다.');
+      const isAuthError =
+        typeof e.message === 'string' && e.message.includes('로그인');
+
+      if (isAuthError) {
+        setError('댓글은 로그인 후 확인할 수 있습니다.');
+        setHasMore(false); // 🔴 꼭 막아줘야 함
+      } else {
+        setError('댓글을 불러오는 중 오류가 발생했습니다.');
+        setHasMore(false); // 일반 에러도 반복 호출 방지
+      }
     } finally {
       setLoading(false);
     }
@@ -88,14 +104,26 @@ export default function CommentList({
     loadComments();
   }, [page, loadComments]);
 
-  // 무한 스크롤: loaderRef 요소가 화면에 보이면 다음 페이지를 요청합니다.
+  // 1. loaderRef 관련 IntersectionObserver 수정
   useEffect(() => {
     const element = loaderRef.current;
     if (!element) return;
+
     observerRef.current?.disconnect();
+
     observerRef.current = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !loading && hasMore) {
+        const isIntersecting = entries[0].isIntersecting;
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
+
+        // 🚫 댓글이 없을 경우(초기 로딩 + 로그인 안함 등)는 무한 호출을 방지
+        if (
+          isIntersecting &&
+          !loading &&
+          hasMore &&
+          scrollTop > 0 &&
+          comments.length > 0
+        ) {
           setPage((prev) => prev + 1);
         }
       },
@@ -104,6 +132,10 @@ export default function CommentList({
     observerRef.current.observe(element);
     return () => observerRef.current?.disconnect();
   }, [loading, hasMore]);
+
+
+    return () => observerRef.current?.disconnect();
+  }, [loading, hasMore, comments.length]);
 
   // [댓글 생성] — CommentList에서 createComment API를 호출하는 함수
   // 이 함수는 CommentForm의 onSubmit으로 전달되어, 사용자가 댓글 게시 버튼(또는 Enter 키)를 누르면 호출됩니다.
@@ -262,10 +294,14 @@ export default function CommentList({
       {/* 무한 스크롤 감지를 위한 요소 */}
       <div ref={loaderRef} className="h-10" />
 
-      {loading && <div className="text-center py-2">댓글 불러오는 중...</div>}
-      {error && <div className="text-center text-red-500 py-2">{error}</div>}
+      {loading && (
+        <div className="text-center py-2 text-gray-400">
+          댓글 불러오는 중...
+        </div>
+      )}
+      {error && <div className="text-center py-2 text-red-500">{error}</div>}
       {!hasMore && comments.length > 0 && (
-        <div className="text-center text-sm text-gray-500 py-2">
+        <div className="text-center text-sm text-gray-400 py-2">
           모든 댓글을 불러왔습니다.
         </div>
       )}
