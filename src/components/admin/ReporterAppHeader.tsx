@@ -1,6 +1,4 @@
 // File: src/components/admin/ReporterAppHeader.tsx
-'use client';
-
 import Link from 'next/link';
 import React from 'react';
 

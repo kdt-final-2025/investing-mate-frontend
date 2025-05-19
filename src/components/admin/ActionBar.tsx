@@ -17,7 +17,7 @@ export default function ActionBar({
   onApprove,
   onReject,
   filter,
-  setFilter
+  setFilter,
 }: ActionBarProps) {
   return (
     <div className="flex justify-between items-center mb-4">
