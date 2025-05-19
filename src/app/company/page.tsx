@@ -6,7 +6,10 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { getSessionOrThrow } from '@/utils/auth';
-import { createFavoriteStock } from '@/service/favoriteService';
+import {
+  createFavoriteStock,
+  deleteFavoriteStock, // ✅ 추가
+} from '@/service/favoriteService';
 
 interface Stock {
   name: string;
@@ -16,7 +19,7 @@ interface Stock {
 }
 
 interface FavoriteStock {
-  code: string;  // 실제 레코드 파라미터명이 code 여야 합니다.
+  code: string;
 }
 
 interface StockListResponse {
@@ -44,7 +47,6 @@ export default function StocksPage() {
   async function fetchStocks() {
     setLoading(true);
     try {
-      // Supabase 세션에서 토큰 가져오기
       const supabase = createClient();
       const session = await getSessionOrThrow(supabase);
       const token = session.access_token;
@@ -57,28 +59,22 @@ export default function StocksPage() {
         order,
       });
 
-      const res = await fetch(
-        `http://localhost:8080/stocks?${params.toString()}`,
-        {
-          credentials: 'include',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await fetch(`http://localhost:8080/stocks?${params.toString()}`, {
+        credentials: 'include',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
       if (!res.ok) throw new Error();
 
       const data: StockListResponse = await res.json();
-      console.log('▶ favoriteStockResponses:', data.favoriteStockResponses);
       setStocks(data.stockResponses);
       setTotalCount(data.totalCount);
 
-      // 코드 → 심볼 교집합 계산
       const allFav = data.favoriteStockResponses ?? [];
       const pageSymbols = new Set(data.stockResponses.map(s => s.symbol));
-      const pageFavCodes = allFav
-        .map(f => f.code)
-        .filter(code => pageSymbols.has(code));
+      const pageFavCodes = allFav.map(f => f.code).filter(code => pageSymbols.has(code));
       setFavSet(new Set(pageFavCodes));
     } catch {
       setStocks([]);
@@ -102,7 +98,6 @@ export default function StocksPage() {
       <div className="container mx-auto p-6 flex flex-col gap-6">
         <h1 className="text-2xl font-bold">주식 목록</h1>
 
-        {/* 검색 & 정렬 */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <form
             onSubmit={e => {
@@ -154,7 +149,6 @@ export default function StocksPage() {
           </div>
         </div>
 
-        {/* 테이블 */}
         <div className="bg-[#1E222D] rounded-lg p-4 flex-1 overflow-auto">
           {loading ? (
             <p className="text-center text-gray-400">로딩 중...</p>
@@ -187,9 +181,20 @@ export default function StocksPage() {
                       onClick={async e => {
                         e.stopPropagation();
                         try {
-                          await createFavoriteStock({ symbol: s.symbol });
-                          setFavSet(prev => new Set(prev).add(s.symbol));
-                        } catch {}
+                          if (favSet.has(s.symbol)) {
+                            await deleteFavoriteStock({ symbol: s.symbol });
+                            setFavSet(prev => {
+                              const next = new Set(prev);
+                              next.delete(s.symbol);
+                              return next;
+                            });
+                          } else {
+                            await createFavoriteStock({ symbol: s.symbol });
+                            setFavSet(prev => new Set(prev).add(s.symbol));
+                          }
+                        } catch (err) {
+                          console.error(err);
+                        }
                       }}
                       className="text-2xl leading-none"
                     >
@@ -210,7 +215,6 @@ export default function StocksPage() {
           )}
         </div>
 
-        {/* 페이지네이션 */}
         <div className="flex justify-center gap-2">
           <button onClick={() => setPage(1)} disabled={!hasPrevGroup} className="px-2 py-1 border rounded">
             &lt;&lt;
