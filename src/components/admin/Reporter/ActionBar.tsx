@@ -1,4 +1,4 @@
-// File: src/components/admin/ActionBar.tsx
+// File: src/components/admin/Reporter/ActionBar.tsx
 import React from 'react';
 import BulkActionButtons from './BulkActionButtons';
 import FilterToggle from './FilterToggle';
@@ -17,7 +17,7 @@ export default function ActionBar({
   onApprove,
   onReject,
   filter,
-  setFilter
+  setFilter,
 }: ActionBarProps) {
   return (
     <div className="flex justify-between items-center mb-4">

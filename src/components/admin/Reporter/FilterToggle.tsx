@@ -1,4 +1,4 @@
-// File: src/components/admin/FilterToggle.tsx
+// File: src/components/admin/Reporter/FilterToggle.tsx
 import React from 'react';
 
 type FilterKey = 'ALL' | 'PENDING' | 'REJECTED';

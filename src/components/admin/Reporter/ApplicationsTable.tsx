@@ -1,4 +1,4 @@
-// File: src/components/admin/ApplicationsTable.tsx
+// File: src/components/admin/Reporter/ApplicationsTable.tsx
 import React from 'react';
 import ApplicationRow from './ApplicationRow';
 import { ApplicationResponse } from '@/hooks/useAdmin/useReporterApplications';

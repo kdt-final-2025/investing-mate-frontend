@@ -1,4 +1,4 @@
-// File: src/components/admin/BulkActionButtons.tsx
+// File: src/components/admin/Reporter/BulkActionButtons.tsx
 import React from 'react';
 
 interface BulkActionButtonsProps {
