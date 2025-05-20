@@ -3,7 +3,6 @@ import Link from 'next/link';
 import Post from '@/components/posts/Post';
 import { getPost } from '@/service/posts';
 import CommentList from '@/components/comments/CommentList';
-// import { commentList } from '@/service/comments';
 
 interface Props {
   params: Promise<{ postId: number }>;
