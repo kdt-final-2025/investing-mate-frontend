@@ -6,6 +6,7 @@ import CommentForm from './CommentForm';
 import { formatDistanceToNow } from 'date-fns';
 import { createClient } from '@/utils/supabase/client';
 import { createComment } from '@/service/comments';
+import { ko } from 'date-fns/locale';
 
 interface Props {
   comment: CommentResponse;
@@ -63,6 +64,7 @@ export default function CommentItem({
           <span className="ml-2 text-xs text-gray-400">
             {formatDistanceToNow(new Date(comment.createdAt), {
               addSuffix: true,
+              locale: ko,
             })}
           </span>
         </div>
@@ -89,12 +91,15 @@ export default function CommentItem({
             ❤️ {comment.likeCount}
           </button>
 
-          <button
-            onClick={() => setShowReplyForm((v) => !v)}
-            className="px-2 py-1 rounded-md hover:bg-gray-700 hover:text-white active:scale-95 active:bg-gray-600 transition duration-150 text-gray-400"
-          >
-            답글
-          </button>
+          {/* parentId가 없을 때만 답글 버튼 보임 */}
+          {!comment.parentId && (
+            <button
+              onClick={() => setShowReplyForm((v) => !v)}
+              className="px-2 py-1 rounded-md hover:bg-gray-700 hover:text-white active:scale-95 active:bg-gray-600 transition duration-150 text-gray-400"
+            >
+              답글
+            </button>
+          )}
 
           {isOwner && (
             <>

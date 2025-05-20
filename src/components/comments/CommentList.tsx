@@ -15,10 +15,12 @@ import {
 } from '@/types/comments';
 import CommentItem from './CommentItem';
 import CommentForm from './CommentForm';
+import CommentSortSelector from '@/components/comments/CommentSortSelector';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Props {
   userId: string;
-  sortType: string;
+  sortType: string; // '최신순' 또는 '좋아요순'
   postId: number;
   size: number;
   pageNumber?: number;
@@ -30,6 +32,7 @@ export default function CommentList({
   sortType,
   size = 150,
 }: Props) {
+  const [sortOrder, setSortOrder] = useState<string>(sortType);
   const [comments, setComments] = useState<CommentResponse[]>([]);
   const [page, setPage] = useState<number>(1);
   const [hasMore, setHasMore] = useState<boolean>(true);
@@ -38,23 +41,19 @@ export default function CommentList({
   const loaderRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
-  // postId나 sortType이 변경되면 댓글 목록 상태를 초기화합니다.
+  // ✅ 정렬 라벨을 백엔드 키로 매핑
+  const getSortKeyForBackend = (label: string): string => {
+    return label === '좋아요순' ? 'LIKE' : 'TIME';
+  };
+
   useEffect(() => {
     setComments([]);
     setPage(1);
     setHasMore(true);
     setError(null);
-  }, [postId, sortType]);
+    loadComments();
+  }, [postId, sortOrder]);
 
-  // postId나 sortType이 변경되면 댓글 목록 상태를 초기화합니다.
-  useEffect(() => {
-    setComments([]);
-    setPage(1);
-    setHasMore(true);
-    setError(null);
-  }, [postId, sortType]);
-
-  // 댓글 목록 API 호출 함수 (페이징 포함)
   const loadComments = useCallback(async () => {
     if (loading || !hasMore) return;
     setLoading(true);
@@ -62,7 +61,7 @@ export default function CommentList({
     try {
       const data: CommentResponseAndPaging = await commentList(
         postId,
-        sortType,
+        getSortKeyForBackend(sortOrder), // ✅ 정렬 조건 변환 적용
         size,
         page
       );
@@ -89,22 +88,16 @@ export default function CommentList({
 
       if (isAuthError) {
         setError('댓글은 로그인 후 확인할 수 있습니다.');
-        setHasMore(false); // 🔴 꼭 막아줘야 함
+        setHasMore(false);
       } else {
         setError('댓글을 불러오는 중 오류가 발생했습니다.');
-        setHasMore(false); // 일반 에러도 반복 호출 방지
+        setHasMore(false);
       }
     } finally {
       setLoading(false);
     }
-  }, [postId, sortType, size, page, loading, hasMore]);
+  }, [postId, sortOrder, size, page, loading, hasMore]);
 
-  // 페이지 번호가 변경될 때마다 댓글 목록을 불러옵니다.
-  useEffect(() => {
-    loadComments();
-  }, [page, loadComments]);
-
-  // 1. loaderRef 관련 IntersectionObserver 수정
   useEffect(() => {
     const element = loaderRef.current;
     if (!element) return;
@@ -115,8 +108,6 @@ export default function CommentList({
       (entries) => {
         const isIntersecting = entries[0].isIntersecting;
         const scrollTop = window.scrollY || document.documentElement.scrollTop;
-
-        // 🚫 댓글이 없을 경우(초기 로딩 + 로그인 안함 등)는 무한 호출을 방지
         if (
           isIntersecting &&
           !loading &&
@@ -131,14 +122,13 @@ export default function CommentList({
     );
     observerRef.current.observe(element);
     return () => observerRef.current?.disconnect();
-  }, [loading, hasMore]);
+  }, [loading, hasMore, comments]);
 
+  const handleSortChange = (newSort: string) => {
+    if (newSort === sortOrder) return;
+    setSortOrder(newSort); // 상태 리셋은 useEffect에서 처리됨
+  };
 
-    return () => observerRef.current?.disconnect();
-  }, [loading, hasMore, comments.length]);
-
-  // [댓글 생성] — CommentList에서 createComment API를 호출하는 함수
-  // 이 함수는 CommentForm의 onSubmit으로 전달되어, 사용자가 댓글 게시 버튼(또는 Enter 키)를 누르면 호출됩니다.
   const handleCreateComment = async (content: string): Promise<void> => {
     if (!postId) {
       console.error('postId가 제공되지 않았습니다.');
@@ -149,14 +139,12 @@ export default function CommentList({
         postId,
         content: content.trim(),
       });
-      // 최상위 댓글인 경우 새 댓글을 상태 배열의 맨 앞에 추가합니다.
       setComments((prev) => [newComment, ...prev]);
     } catch (err) {
       console.error('댓글 생성 실패:', err);
     }
   };
 
-  // [댓글 삭제]
   const handleDeleteComment = async (commentId: number): Promise<boolean> => {
     if (!window.confirm('정말 이 댓글을 삭제하시겠습니까?')) return false;
     try {
@@ -177,7 +165,6 @@ export default function CommentList({
     }
   };
 
-  // [댓글 수정]
   const handleUpdateComment = async (
     commentId: number,
     content: string
@@ -209,7 +196,6 @@ export default function CommentList({
     }
   };
 
-  // [댓글 좋아요 토글]
   const handleLikeComment = async (commentId: number): Promise<boolean> => {
     try {
       const result = await likeComment(commentId);
@@ -246,7 +232,6 @@ export default function CommentList({
     }
   };
 
-  // [답글 추가] — 상위 댓글에 새로운 대댓글(답글)을 추가합니다.
   const handleAddReply = (
     parentComment: CommentResponse,
     newReply: CommentResponse
@@ -266,7 +251,9 @@ export default function CommentList({
 
   return (
     <div className="space-y-4">
-      {/* CommentForm에 handleCreateComment 함수를 onSubmit으로 전달 */}
+      {/* 정렬 선택 UI */}
+      <CommentSortSelector sortOrder={sortOrder} onChange={handleSortChange} />
+
       <CommentForm postId={postId} onSubmit={handleCreateComment} />
 
       {!loading && comments.length === 0 && (
@@ -275,25 +262,32 @@ export default function CommentList({
         </div>
       )}
 
-      <div className="space-y-4">
-        {comments.map((comment) => (
-          <CommentItem
-            key={comment.commentId}
-            comment={comment}
-            postId={postId}
-            onDelete={handleDeleteComment}
-            onUpdate={handleUpdateComment}
-            onLike={handleLikeComment}
-            onAddReply={handleAddReply}
-            // onCreated도 필요에 따라 전달할 수 있습니다(답글 생성 등)
-            onCreated={handleCreateComment}
-          />
-        ))}
-      </div>
+      <AnimatePresence mode="wait">
+        {!loading && comments.length > 0 && (
+          <motion.div
+            key={sortOrder} // 정렬이 바뀌면 완전 새로 렌더링되도록 key 지정
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+            className="space-y-4"
+          >
+            {comments.map((comment) => (
+              <CommentItem
+                key={comment.commentId}
+                comment={comment}
+                postId={postId}
+                onDelete={handleDeleteComment}
+                onUpdate={handleUpdateComment}
+                onLike={handleLikeComment}
+                onAddReply={handleAddReply}
+              />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* 무한 스크롤 감지를 위한 요소 */}
       <div ref={loaderRef} className="h-10" />
-
       {loading && (
         <div className="text-center py-2 text-gray-400">
           댓글 불러오는 중...

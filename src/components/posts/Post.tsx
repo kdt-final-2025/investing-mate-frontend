@@ -6,17 +6,12 @@ import { deletePost } from '@/service/posts';
 import LikeButton from '@/components/posts/LikeButton';
 import { useIsAuthor } from '@/hooks/usePosts/useIsAuthor';
 
-import PostEditForm, {
-  PostEditFormValues,
-} from '@/components/posts/PostEditForm';
-import CommentList from '@/components/comments/CommentList';
-
 interface Props {
   initialPost: PostResponse;
   postId: number;
 }
 
-export default function Post({ initialPost, postId }: PostProps) {
+export default function Post({ initialPost, postId }: Props) {
   const isAuthor = useIsAuthor(initialPost.userId);
   const router = useRouter();
 
@@ -86,15 +81,13 @@ export default function Post({ initialPost, postId }: PostProps) {
         )}
       </article>
 
-      <footer className="flex justify-between items-center pt-4 border-t border-gray-700">
+      <footer className="flex justify-between items-center pt-4">
         <LikeButton
           postId={Number(postId)}
           initialLiked={initialPost.likeCount > 0}
           initialCount={initialPost.likeCount}
         />
-        <div className="flex space-x-4 text-gray-400 text-sm">
-          <button className="hover:text-white transition">댓글</button>
-        </div>
+        <div className="flex space-x-4 text-gray-400 text-sm"></div>
       </footer>
     </main>
   );
