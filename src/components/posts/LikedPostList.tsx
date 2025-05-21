@@ -34,6 +34,7 @@ export default function LikedPostList({ pageSize = 10 }: LikedPostListProps) {
                 viewCount: post.viewCount,
                 commentCount: post.commentCount,
                 likeCount: post.likeCount,
+                createdAt: post.createdAt,
               }}
             />
             <div className="mt-4 pl-4 flex items-center">
