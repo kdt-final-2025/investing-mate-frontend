@@ -27,19 +27,8 @@ export default function AdminDashboard() {
       {/* 제목 */}
       <h1 className="text-4xl font-bold text-white mb-8">운영모드 대시보드</h1>
 
-      {/* 카드 그리드 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 w-full max-w-4xl">
-        {/* 사용자 관리 카드 */}
-        <Link
-          href="/admin/users"
-          className="group block p-6 bg-gradient-to-br from-blue-700 to-indigo-700 rounded-xl shadow-lg transform transition hover:scale-105"
-        >
-          <h2 className="text-2xl font-semibold text-white mb-2 group-hover:underline">
-            사용자 관리
-          </h2>
-          <p className="text-gray-300">회원 목록 조회 · 회원 관리</p>
-        </Link>
-
+      {/* 카드 그리드: 한 줄에 한 개씩, 가로로 꽉 채우고 중앙정렬 */}
+      <div className="grid grid-cols-1 gap-8 w-full max-w-4xl">
         {/* 기자 신청관리 카드 */}
         <Link
           href="/admin/reporter-applications"
@@ -50,6 +39,7 @@ export default function AdminDashboard() {
           </h2>
           <p className="text-gray-300">신청서 승인&반려 처리</p>
         </Link>
+        {/* 두 번째 카드 추가 시 이 자리에 작성하면 첫 번째 카드 아래로 배치됩니다. */}
       </div>
     </div>
   );
