@@ -91,7 +91,6 @@ export default function AvatarMenu({
                 <form action={signOutAction}>
                   <button
                     type="submit"
-                    onClick={() => setMenuOpen(false)}
                     className="w-full text-left px-2 py-1 hover:bg-[#363B47] rounded"
                   >
                     로그아웃
