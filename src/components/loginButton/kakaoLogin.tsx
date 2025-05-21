@@ -21,7 +21,11 @@ const Kakaologin = async () => {
 
 export function KakaoLoginButton() {
   return (
-    <button type="button" onClick={Kakaologin}>
+    <button
+      type="button"
+      onClick={Kakaologin}
+      className="w-full py-3 rounded-full bg-[#FFEB00] text-black text-center font-medium hover:opacity-90 cursor-pointer transition"
+    >
       Kakao 로그인
     </button>
   );
