@@ -1,5 +1,3 @@
-'use client';
-
 import React, { useRef, DragEvent } from 'react';
 import { Paperclip, Trash2 } from 'lucide-react';
 import { usePostsImage } from '@/hooks/usePosts/usePostsImage';

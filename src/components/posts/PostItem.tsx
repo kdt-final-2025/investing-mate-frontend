@@ -1,5 +1,4 @@
 // components/posts/PostItem.tsx
-
 import Link from 'next/link';
 import { PostListResponse } from '@/types/posts'; // 실제 경로로 수정
 
