@@ -25,7 +25,11 @@ const GoogleLogin = async () => {
 
 export function GoogleLoginButton() {
   return (
-    <button type="button" onClick={GoogleLogin}>
+    <button
+      type="button"
+      onClick={GoogleLogin}
+      className="w-full py-3 rounded-full bg-white border border-gray-300 text-gray-700 text-center font-medium hover:bg-gray-100 cursor-pointer transition"
+    >
       Google 로그인
     </button>
   );
