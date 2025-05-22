@@ -2,7 +2,7 @@
 import CreatePostForm from '@/components/posts/CreatePostForm';
 
 interface NewPostPageProps {
-  searchParams: Promise<{ boardId?: number }>;
+  searchParams: Promise<{ boardId: number }>;
 }
 
 export default async function NewPostPage({ searchParams }: NewPostPageProps) {
