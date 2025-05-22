@@ -9,6 +9,7 @@ interface PostListProps {
   boardId: number;
   currentPage: number;
   searchTerm?: string;
+  direction?: 'DESC' | 'ASC' | undefined;
 }
 
 export function PostList({
@@ -17,6 +18,7 @@ export function PostList({
   boardId,
   currentPage,
   searchTerm,
+  direction,
 }: PostListProps) {
   return (
     <div>
@@ -31,6 +33,7 @@ export function PostList({
         totalPages={pageInfo.totalPages}
         currentPage={currentPage}
         searchTerm={searchTerm}
+        direction={direction}
       />
     </div>
   );
