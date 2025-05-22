@@ -96,7 +96,7 @@ export async function fetchPostList(params: {
   boardId: number;
   postTitle?: string;
   userId?: string;
-  sortBy?: 'NEWEST' | 'OLDEST';
+  sortBy?: 'NEWEST' | 'MOST_LIKED';
   direction?: 'DESC' | 'ASC';
   pageNumber?: number;
   size?: number;

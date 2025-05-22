@@ -1,11 +1,17 @@
+// src/components/posts/PostListPagination.tsx
+
 import Link from 'next/link';
+
+type SortBy = 'NEWEST' | 'MOST_LIKED';
+type Direction = 'ASC' | 'DESC';
 
 interface PostListPaginationProps {
   boardId: number;
   totalPages: number;
   currentPage: number;
   searchTerm?: string;
-  direction?: 'DESC' | 'ASC' | undefined;
+  sortBy?: SortBy;
+  direction?: Direction;
 }
 
 export function PostListPagination({
@@ -13,14 +19,16 @@ export function PostListPagination({
   totalPages,
   currentPage,
   searchTerm,
+  sortBy,
   direction,
 }: PostListPaginationProps) {
   return (
     <div className="flex justify-center mt-6 space-x-2">
       {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => {
         const params = new URLSearchParams();
-        params.set('page', num.toString());
+        params.set('page', String(num));
         if (searchTerm) params.set('postTitle', searchTerm);
+        if (sortBy) params.set('sortBy', sortBy);
         if (direction) params.set('direction', direction);
         const href = `/boards/${boardId}/posts?${params.toString()}`;
 
