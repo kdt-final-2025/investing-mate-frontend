@@ -2,10 +2,16 @@
 import CreatePostForm from '@/components/posts/CreatePostForm';
 
 interface NewPostPageProps {
-  searchParams: { boardId: number };
+  searchParams: Promise<{ boardId: number }>;
 }
 
-export default function NewPostPage({ searchParams }: NewPostPageProps) {
-  const boardId = searchParams.boardId;
-  return <CreatePostForm boardId={boardId} />;
+export default async function NewPostPage({ searchParams }: NewPostPageProps) {
+  const { boardId } = await searchParams;
+
+  if (!boardId) {
+    throw new Error('잘못된 접근입니다: boardId가 없습니다.');
+  }
+
+  const boardIdNum = Number(boardId);
+  return <CreatePostForm boardId={boardIdNum} />;
 }

@@ -1,5 +1,4 @@
 // src/components/posts/PostLikePagination.tsx
-'use client';
 import React from 'react';
 
 interface PostLikePaginationProps {
