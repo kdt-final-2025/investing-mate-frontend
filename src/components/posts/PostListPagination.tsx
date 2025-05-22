@@ -4,19 +4,23 @@ interface PostListPaginationProps {
   boardId: number;
   totalPages: number;
   currentPage: number;
+  searchTerm?: string;
 }
 
 export function PostListPagination({
   boardId,
   totalPages,
   currentPage,
+  searchTerm,
 }: PostListPaginationProps) {
   return (
     <div className="flex justify-center mt-6 space-x-2">
       {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
         <Link
           key={num}
-          href={`/boards/${boardId}/posts?page=${num}`}
+          href={`/boards/${boardId}/posts?page=${num}${
+            searchTerm ? `&postTitle=${encodeURIComponent(searchTerm)}` : ''
+          }`}
           className={`px-4 py-2 rounded-lg text-white text-sm transition ${
             num === currentPage
               ? 'bg-[#4a5b68]'
