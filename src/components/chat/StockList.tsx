@@ -81,7 +81,7 @@ export default function StockList({ stockData }: StockListProps) {
                 <div className="bg-[#1E222D] p-2 rounded">
                   <p className="text-xs text-gray-400">고점 대비</p>
                   <p className="font-bold text-red-500">
-                    -{formatPercent((1 - stock.priceGapRatio) * 100)}%
+                    -{formatPercent((1 - stock.currentToHighRatio) * 100)}%
                   </p>
                 </div>
               </div>

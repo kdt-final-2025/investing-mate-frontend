@@ -9,7 +9,7 @@ export interface StockData {
   currentPrice: number;
   highPrice1y: number;
   dividendYield: number;
-  priceGapRatio: number;
+  currentToHighRatio: number;
   recommendReason: string;
   riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
   detail: string;

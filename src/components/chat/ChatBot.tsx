@@ -16,9 +16,9 @@ interface ChatBotProps {
 
 const suggestedQuestions: string[] = [
   '고배당 주식 추천해주세요',
-  '안전한 투자가 가능한 주식이 있을까요?',
+  '안전한 투자가 가능한 종목 알려주세요',
   '현재 저평가된 주식을 알려주세요',
-  '배당률 80% 이상인 주식 있나요?',
+  '배당률 0.8% 이상인 주식 있나요?',
 ];
 
 export default function ChatBot({
