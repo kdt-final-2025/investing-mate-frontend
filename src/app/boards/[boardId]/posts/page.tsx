@@ -7,7 +7,7 @@ import { PostSearch } from '@/components/posts/PostSearch';
 
 interface PageProps {
   params: Promise<{ boardId: number }>;
-  searchParams: Promise<{ page?: string; postTitle?: string }>;
+  searchParams: Promise<{ page: string; postTitle?: string }>;
 }
 
 export default async function BoardPostsPage({
