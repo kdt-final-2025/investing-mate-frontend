@@ -46,13 +46,18 @@ export default function CommentList({
     return label === '좋아요순' ? 'LIKE' : 'TIME';
   };
 
+  // 정렬이 바뀌면 초기화만 수행
   useEffect(() => {
     setComments([]);
     setPage(1);
     setHasMore(true);
     setError(null);
-    loadComments();
   }, [postId, sortOrder]);
+
+  // 페이지가 바뀔 때마다 댓글을 로드
+  useEffect(() => {
+    loadComments();
+  }, [page, postId, sortOrder]);
 
   const loadComments = useCallback(async () => {
     if (loading || !hasMore) return;
