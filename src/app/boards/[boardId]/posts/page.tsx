@@ -1,12 +1,22 @@
 // src/app/boards/[boardId]/posts/page.tsx
 
-import { PostList } from '@/components/posts/PostList';
 import Link from 'next/link';
+import { PostList } from '@/components/posts/PostList';
+import { PostSearch } from '@/components/posts/PostSearch';
 import { fetchPostList } from '@/service/posts';
+import type { PostDto, PageInfo } from '@/types/posts';
+
+type SortBy = 'NEWEST' | 'MOST_LIKED';
+type Direction = 'ASC' | 'DESC';
 
 interface PageProps {
   params: Promise<{ boardId: number }>;
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{
+    page?: string;
+    postTitle?: string;
+    sortBy?: SortBy;
+    direction?: Direction;
+  }>;
 }
 
 export default async function BoardPostsPage({
@@ -14,23 +24,30 @@ export default async function BoardPostsPage({
   searchParams,
 }: PageProps) {
   const { boardId: boardIdNumber } = await params;
-  const { page } = await searchParams;
+  const { page, postTitle, sortBy, direction } = await searchParams;
 
-  const boardIdNum = parseInt(String(boardIdNumber), 10);
-  const currentPage = page ? parseInt(page, 10) : 1;
+  const boardId = Number(boardIdNumber);
+  const currentPage = page ? Number(page) : 1;
 
   const {
     boardName,
     postListResponse: posts,
     pageInfo,
+  }: {
+    boardName: string;
+    postListResponse: PostDto[];
+    pageInfo: PageInfo;
   } = await fetchPostList({
-    boardId: boardIdNum,
+    boardId,
     pageNumber: currentPage,
+    postTitle,
+    sortBy,
+    direction,
   });
 
   return (
     <main className="min-h-screen bg-[#131722] text-white p-8">
-      {/* 상단: 뒤로 가기 버튼 & 게시판명 */}
+      {/* 뒤로 가기 & 게시판명 */}
       <div className="relative mb-6">
         <div className="absolute left-0 top-0">
           <Link href="/boards">
@@ -42,17 +59,14 @@ export default async function BoardPostsPage({
         <h1 className="text-3xl font-bold text-center">{boardName}</h1>
       </div>
 
-      {/* 좋아요한 게시물 (왼쪽) & 새 게시글 (오른쪽) 버튼 */}
+      {/* 좋아요한 게시물 & 새 게시글 */}
       <div className="flex justify-between items-center mb-6">
         <Link href="/posts/liked">
-          <button
-            className="px-4 py-2 rounded-full text-sm text-pink-400 border-2 border-pink-400 bg-transparent
-                       hover:bg-pink-400 hover:text-white transition-colors"
-          >
+          <button className="px-4 py-2 rounded-full text-sm text-pink-400 border-2 border-pink-400 bg-transparent hover:bg-pink-400 hover:text-white transition-colors">
             좋아요한 게시물
           </button>
         </Link>
-        <Link href={`/posts/new?boardId=${boardIdNumber}`}>
+        <Link href={`/posts/new?boardId=${boardId}`}>
           <button className="px-4 py-2 bg-[#3b4754] hover:bg-[#4a5b68] rounded-full text-white text-sm">
             + 새 게시글
           </button>
@@ -63,8 +77,19 @@ export default async function BoardPostsPage({
       <PostList
         posts={posts}
         pageInfo={pageInfo}
-        boardId={boardIdNumber}
+        boardId={boardId}
         currentPage={currentPage}
+        searchTerm={postTitle}
+        sortBy={sortBy}
+        direction={direction}
+      />
+
+      {/* 검색 & 정렬 컨트롤 */}
+      <PostSearch
+        boardId={boardId}
+        initialSearch={postTitle}
+        initialSortBy={sortBy}
+        initialDirection={direction}
       />
     </main>
   );
